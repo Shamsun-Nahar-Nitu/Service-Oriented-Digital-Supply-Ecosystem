@@ -185,26 +185,3 @@ table is just a map to get you oriented.
   keep valid references.
 
 ---
-
-## 9. Extending this project
-
-- **New app** (e.g. `reviews`): copy the shape of `apps/categories/`
-  (smallest app), register it in `INSTALLED_APPS` and `config/api_urls.py`.
-- **Multi-warehouse inventory**: `Inventory` is currently
-  one-to-one with `Product`; add a `Warehouse` model and turn it into a FK.
-- **Real payment gateway**: replace the manual `mark_success`/`mark_failed`
-  actions in `apps/payments/views.py` with a webhook endpoint that verifies
-  the gateway's signature and calls the same `Payment.mark_success()` /
-  `mark_failed()` model methods.
-- **Postgres instead of SQLite**: change `DB_ENGINE`/`DB_NAME` in `.env`
-  (and add `DB_USER`/`DB_PASSWORD`/`DB_HOST` handling in `settings.py` if you
-  need them) - no other code changes required.
-
----
-
-## 10. Not included yet (by design, per current scope)
-
-Docker, CI/CD, automated test suite, rate-limit tuning beyond the defaults,
-and a real payment gateway integration were intentionally left out of this
-pass. The project is structured so all of these can be dropped in later
-without restructuring anything.
