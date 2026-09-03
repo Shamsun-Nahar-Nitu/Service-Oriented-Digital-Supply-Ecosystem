@@ -1,8 +1,5 @@
 """
-Aggregates every app's URLs under the /api/v1/ prefix.
-
-Keeping this separate from config/urls.py means bumping to /api/v2/ later
-(e.g. for a breaking change) is a one-line change, not a rewrite.
+Aggregates every app's URLs under the /api/ prefix.
 """
 
 from django.urls import include, path

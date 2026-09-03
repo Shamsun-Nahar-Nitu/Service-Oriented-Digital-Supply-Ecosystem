@@ -44,7 +44,7 @@ class TransactionViewSet(
 
     @action(detail=True, methods=["post"])
     def cancel(self, request, pk=None):
-        """POST /api/v1/transactions/{id}/cancel/ - restores stock."""
+        """POST /api/transactions/{id}/cancel/ - restores stock."""
         txn = self.get_object()
         if txn.status in (Transaction.Status.CANCELLED, Transaction.Status.DELIVERED):
             return Response(

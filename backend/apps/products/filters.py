@@ -5,7 +5,7 @@ from .models import Product
 
 class ProductFilter(filters.FilterSet):
     """Lets the frontend query things like:
-    /api/v1/products/?min_price=100&max_price=500&category=3&brand=sony
+    /api/products/?min_price=100&max_price=500&category=3&brand=sony
     """
 
     min_price = filters.NumberFilter(field_name="mrp", lookup_expr="gte")

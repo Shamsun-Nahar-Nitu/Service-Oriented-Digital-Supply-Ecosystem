@@ -33,8 +33,8 @@ ecommerce_backend/
 ├── .env.example              # copy to .env
 ├── project/                  # Django project wiring only, no business logic
 │   ├── settings.py
-│   ├── urls.py                # /admin/, /api/schema/, /api/docs/, /api/v1/*
-│   ├── api_urls.py            # aggregates every app's routes under /api/v1/
+│   ├── urls.py                # /admin/, /api/schema/, /api/redoc/, /doc/
+│   ├── api_urls.py            # aggregates every app's routes under /api/
 │   ├── wsgi.py / asgi.py
 ├── apps/
 │   ├── common/                # shared base models, permissions, pagination
@@ -66,9 +66,9 @@ shared permission classes in `apps/common/permissions.py`:
 | **vendor**   | Create/edit/delete their **own** products and inventory. Read-only on everything else. |
 | **customer** | Browse categories/products (read-only), place orders, pay for their **own** orders. |
 
-Public self-registration (`POST /api/v1/auth/register/`) only allows the
+Public self-registration (`POST /api/auth/register/`) only allows the
 `customer` and `vendor` roles. Admin/manager accounts must be created by an
-existing admin (via `POST /api/v1/auth/users/` or Django admin).
+existing admin (via `POST /api/auth/users/` or Django admin).
 
 ---
 
@@ -88,7 +88,7 @@ existing admin (via `POST /api/v1/auth/users/` or Django admin).
   banking/wallet/bank transfer), `status`, `amount` (always derived from the
   transaction total server-side, never trusted from the client).
 
-Placing an order (`POST /api/v1/transactions/`) atomically creates the
+Placing an order (`POST /api/transactions/`) atomically creates the
 transaction, its line items, and deducts stock from inventory in a single
 DB transaction - if stock is insufficient, nothing is created.
 
@@ -120,7 +120,7 @@ python manage.py runserver
 
 Now visit:
 
-- **Swagger UI**: http://127.0.0.1:8000/api/docs/
+- **Swagger UI**: http://127.0.0.1:8000/doc/
 - **ReDoc**: http://127.0.0.1:8000/api/redoc/
 - **Raw OpenAPI schema**: http://127.0.0.1:8000/api/schema/
 - **Django admin**: http://127.0.0.1:8000/admin/
@@ -129,11 +129,11 @@ Now visit:
 
 ## 6. Authentication flow
 
-1. `POST /api/v1/auth/register/` - sign up (customer/vendor only).
-2. `POST /api/v1/auth/login/` - exchange email+password for `access` + `refresh` JWTs.
+1. `POST /api/auth/register/` - sign up (customer/vendor only).
+2. `POST /api/auth/login/` - exchange email+password for `access` + `refresh` JWTs.
 3. Send `Authorization: Bearer <access_token>` on every subsequent request.
-4. `POST /api/v1/auth/refresh/` - get a new access token from the refresh token.
-5. `POST /api/v1/auth/logout/` - blacklist a refresh token (server-side logout).
+4. `POST /api/auth/refresh/` - get a new access token from the refresh token.
+5. `POST /api/auth/logout/` - blacklist a refresh token (server-side logout).
 
 **Using Swagger UI with JWT:** click the "Authorize" button, paste
 `Bearer <access_token>` (include the word "Bearer"), and every request the
@@ -145,19 +145,19 @@ docs UI sends will be authenticated.
 
 | Method & path | Who | Purpose |
 |---|---|---|
-| `POST /api/v1/auth/register/` | anyone | sign up as customer/vendor |
-| `POST /api/v1/auth/login/` | anyone | get JWT pair |
-| `GET/PATCH /api/v1/auth/me/` | authenticated | view/edit own profile |
-| `POST /api/v1/auth/change-password/` | authenticated | change own password |
-| `GET/POST /api/v1/auth/users/` | admin | manage all accounts |
-| `GET/POST /api/v1/categories/` | read: all, write: admin/manager | catalog categories |
-| `GET/POST /api/v1/products/` | read: all, write: admin/manager/vendor(own) | catalog |
-| `GET/POST /api/v1/inventory/` | admin/manager/vendor(own) | stock levels |
-| `POST /api/v1/inventory/{id}/restock/` | admin/manager | add stock |
-| `GET/POST /api/v1/transactions/` | own orders (staff see all) | place/list orders |
-| `POST /api/v1/transactions/{id}/cancel/` | owner/staff | cancel + restock |
-| `GET/POST /api/v1/payments/` | own payments (staff see all) | pay for an order |
-| `POST /api/v1/payments/{id}/mark_success/` | admin/manager | confirm payment |
+| `POST /api/auth/register/` | anyone | sign up as customer/vendor |
+| `POST /api/auth/login/` | anyone | get JWT pair |
+| `GET/PATCH /api/auth/me/` | authenticated | view/edit own profile |
+| `POST /api/auth/change-password/` | authenticated | change own password |
+| `GET/POST /api/auth/users/` | admin | manage all accounts |
+| `GET/POST /api/categories/` | read: all, write: admin/manager | catalog categories |
+| `GET/POST /api/products/` | read: all, write: admin/manager/vendor(own) | catalog |
+| `GET/POST /api/inventory/` | admin/manager/vendor(own) | stock levels |
+| `POST /api/inventory/{id}/restock/` | admin/manager | add stock |
+| `GET/POST /api/transactions/` | own orders (staff see all) | place/list orders |
+| `POST /api/transactions/{id}/cancel/` | owner/staff | cancel + restock |
+| `GET/POST /api/payments/` | own payments (staff see all) | pay for an order |
+| `POST /api/payments/{id}/mark_success/` | admin/manager | confirm payment |
 
 Full request/response schemas for every field are in Swagger UI - this
 table is just a map to get you oriented.

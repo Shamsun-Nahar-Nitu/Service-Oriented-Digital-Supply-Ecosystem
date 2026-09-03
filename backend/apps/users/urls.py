@@ -23,6 +23,6 @@ urlpatterns = [
     path("me/", MeView.as_view(), name="auth-me"),
     path("change-password/", ChangePasswordView.as_view(), name="auth-change-password"),
 
-    # Admin user management: /api/v1/auth/users/
+    # Admin user management: /api/auth/users/
     path("", include(router.urls)),
 ]

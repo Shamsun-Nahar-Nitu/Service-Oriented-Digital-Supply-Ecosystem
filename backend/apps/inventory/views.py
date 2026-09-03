@@ -40,7 +40,7 @@ class InventoryViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"])
     def restock(self, request, pk=None):
-        """POST /api/v1/inventory/{id}/restock/  { "amount": 50 }"""
+        """POST /api/inventory/{id}/restock/  { "amount": 50 }"""
         inventory = self.get_object()
         serializer = RestockSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
