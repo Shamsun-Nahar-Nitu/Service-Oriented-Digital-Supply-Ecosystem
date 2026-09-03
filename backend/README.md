@@ -31,7 +31,7 @@ ecommerce_backend/
 ├── manage.py
 ├── requirements.txt
 ├── .env.example              # copy to .env
-├── config/                   # project wiring only, no business logic
+├── project/                  # Django project wiring only, no business logic
 │   ├── settings.py
 │   ├── urls.py                # /admin/, /api/schema/, /api/docs/, /api/v1/*
 │   ├── api_urls.py            # aggregates every app's routes under /api/v1/
@@ -74,7 +74,7 @@ existing admin (via `POST /api/v1/auth/users/` or Django admin).
 
 ## 4. Data model overview
 
-- **User** - custom, email-based login, `role` field, timestamps.
+- **User** - custom, email-based login, unique `id`, `role` field, timestamps.
 - **Category** - self-referencing `parent` for subcategories.
 - **Product** - `sku`, `product_name`, `brand`, `issues` (known defects/recalls),
   `expire_date`, `mrp`, `discount_percent`. `selling_price` is a computed

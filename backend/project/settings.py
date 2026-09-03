@@ -79,7 +79,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "config.urls"
+ROOT_URLCONF = "project.urls"
 
 # No template-driven views anywhere in this project (pure JSON API), but the
 # Django admin site still needs the app-provided template engine to render.
@@ -99,8 +99,8 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "config.wsgi.application"
-ASGI_APPLICATION = "config.asgi.application"
+WSGI_APPLICATION = "project.wsgi.application"
+ASGI_APPLICATION = "project.asgi.application"
 
 # ---------------------------------------------------------------------------
 # Database (sqlite3 by default; swap via env vars without touching this file)

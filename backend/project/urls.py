@@ -19,7 +19,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
 
     # Versioned API
-    path("api/v1/", include("config.api_urls")),
+    path("api/v1/", include("project.api_urls")),
 
     # OpenAPI schema + docs UIs
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
