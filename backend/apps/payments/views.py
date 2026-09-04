@@ -1,64 +1,54 @@
 from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from apps.common.permissions import IsAdminOrManager
-
 from .models import Payment
-from .permissions import IsTransactionOwnerOrStaff
-from .serializers import PaymentSerializer
+from .serializers import PaymentConfirmSerializer, PaymentSerializer
 
 
 class PaymentViewSet(
     mixins.CreateModelMixin,
-    mixins.RetrieveModelMixin,
     mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
     viewsets.GenericViewSet,
 ):
     """
-    Customers initiate a payment for their own transaction (status starts as
-    `pending`). Marking a payment success/failed/refunded is a staff-only
-    action - in a real deployment this would instead be driven by a payment
-    gateway webhook, but the manual endpoints keep this testable without one.
+    /api/v1/payments/
+
+    Customers initiate a payment against their own transaction; admins and
+    managers can see every payment. There is no separate gateway integrated
+    here — `confirm` simulates the webhook a real provider (Stripe,
+    Razorpay, etc.) would send, which is where that integration would plug in.
     """
 
-    queryset = Payment.objects.select_related("transaction", "transaction__user")
     serializer_class = PaymentSerializer
-    permission_classes = [IsTransactionOwnerOrStaff]
+    permission_classes = [IsAuthenticated]
     filterset_fields = ["status", "method"]
-    ordering_fields = ["created_at", "amount"]
 
     def get_queryset(self):
-        qs = super().get_queryset()
+        queryset = Payment.objects.select_related("transaction", "transaction__user")
+
+        if getattr(self, "swagger_fake_view", False) or not self.request.user.is_authenticated:
+            return queryset.none()
+
         user = self.request.user
-        if user.is_authenticated and not (user.is_admin or user.is_manager):
-            qs = qs.filter(transaction__user=user)
-        return qs
-
-    def get_permissions(self):
-        if self.action in ("mark_success", "mark_failed", "mark_refunded"):
-            return [IsAdminOrManager()]
-        return super().get_permissions()
+        if user.role in (user.Role.ADMIN, user.Role.MANAGER):
+            return queryset
+        return queryset.filter(transaction__user=user)
 
     @action(detail=True, methods=["post"])
-    def mark_success(self, request, pk=None):
+    def confirm(self, request, pk=None):
+        """POST /api/v1/payments/{id}/confirm/ — simulate a gateway success/failure callback."""
         payment = self.get_object()
-        payment.mark_success()
-        payment.transaction.status = payment.transaction.Status.CONFIRMED
-        payment.transaction.save(update_fields=["status", "updated_at"])
-        return Response(PaymentSerializer(payment).data)
+        serializer = PaymentConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-    @action(detail=True, methods=["post"])
-    def mark_failed(self, request, pk=None):
-        payment = self.get_object()
-        payment.mark_failed()
-        return Response(PaymentSerializer(payment).data)
+        if serializer.validated_data["success"]:
+            payment.mark_successful(
+                gateway_reference=serializer.validated_data.get("gateway_reference", "")
+            )
+        else:
+            payment.mark_failed()
 
-    @action(detail=True, methods=["post"])
-    def mark_refunded(self, request, pk=None):
-        payment = self.get_object()
-        payment.status = payment.Status.REFUNDED
-        payment.save(update_fields=["status", "updated_at"])
-        payment.transaction.status = payment.transaction.Status.REFUNDED
-        payment.transaction.save(update_fields=["status", "updated_at"])
         return Response(PaymentSerializer(payment).data)

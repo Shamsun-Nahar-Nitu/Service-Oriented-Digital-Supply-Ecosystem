@@ -1,51 +1,55 @@
 from rest_framework import serializers
 
-from apps.transactions.models import Transaction
-
 from .models import Payment
 
 
 class PaymentSerializer(serializers.ModelSerializer):
-    # Not required on input: defaults to the transaction's total_amount in
-    # validate() below, so clients never have to (and never get to) invent
-    # their own payment amount.
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    transaction_number = serializers.CharField(
+        source="transaction.transaction_number", read_only=True
+    )
 
     class Meta:
         model = Payment
-        fields = (
+        fields = [
             "id",
             "transaction",
+            "transaction_number",
             "method",
             "status",
             "amount",
             "gateway_reference",
             "paid_at",
-            "created_at",
-            "updated_at",
-        )
-        read_only_fields = (
+            "created_date",
+            "updated_date",
+        ]
+        read_only_fields = [
             "id",
             "status",
             "gateway_reference",
             "paid_at",
-            "created_at",
-            "updated_at",
-        )
+            "created_date",
+            "updated_date",
+        ]
+        extra_kwargs = {"amount": {"required": False}}
 
-    def validate_transaction(self, value: Transaction):
-        request = self.context.get("request")
-        if request and not (request.user.is_admin or request.user.is_manager):
-            if value.user != request.user:
-                raise serializers.ValidationError("You can only pay for your own transaction.")
+    def validate_transaction(self, value):
+        request = self.context["request"]
+        user = request.user
+        if user.role not in (user.Role.ADMIN, user.Role.MANAGER) and value.user_id != user.id:
+            raise serializers.ValidationError("You can only pay for your own orders.")
         if hasattr(value, "payment"):
-            raise serializers.ValidationError("This transaction already has a payment record.")
+            raise serializers.ValidationError("A payment already exists for this transaction.")
         return value
 
     def validate(self, attrs):
-        # Never trust a client-supplied amount - always derive it from the
-        # transaction's own total so a payment can't be under/over-recorded.
         transaction = attrs.get("transaction")
-        if transaction:
+        if transaction and attrs.get("amount") is None:
             attrs["amount"] = transaction.total_amount
         return attrs
+
+
+class PaymentConfirmSerializer(serializers.Serializer):
+    """Simulates a payment gateway callback confirming (or failing) a payment."""
+
+    success = serializers.BooleanField(default=True)
+    gateway_reference = serializers.CharField(required=False, allow_blank=True, default="")

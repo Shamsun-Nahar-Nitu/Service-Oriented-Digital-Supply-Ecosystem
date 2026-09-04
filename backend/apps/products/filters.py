@@ -4,29 +4,15 @@ from .models import Product
 
 
 class ProductFilter(filters.FilterSet):
-    """Lets the frontend query things like:
-    /api/products/?min_price=100&max_price=500&category=3&brand=sony
-    """
-
     min_price = filters.NumberFilter(field_name="mrp", lookup_expr="gte")
     max_price = filters.NumberFilter(field_name="mrp", lookup_expr="lte")
-    brand = filters.CharFilter(field_name="brand", lookup_expr="icontains")
-    is_expired = filters.BooleanFilter(method="filter_is_expired")
+    in_stock = filters.BooleanFilter(method="filter_in_stock")
 
     class Meta:
         model = Product
-        fields = ["category", "vendor", "brand", "is_active"]
+        fields = ["category", "vendor", "brand", "issues", "is_active"]
 
-    def filter_is_expired(self, queryset, name, value):
-        from django.utils import timezone
-
-        today = timezone.now().date()
+    def filter_in_stock(self, queryset, name, value):
         if value:
-            return queryset.filter(expire_date__lt=today)
-        return queryset.filter(models_q_expire_gte_or_null(today))
-
-
-def models_q_expire_gte_or_null(today):
-    from django.db.models import Q
-
-    return Q(expire_date__gte=today) | Q(expire_date__isnull=True)
+            return queryset.filter(inventory__quantity_in_stock__gt=0)
+        return queryset.filter(inventory__quantity_in_stock=0)

@@ -1,36 +1,43 @@
 from rest_framework import viewsets
 
-from apps.common.permissions import IsVendorOwnerOrStaff
-
 from .filters import ProductFilter
 from .models import Product
+from .permissions import ProductPermission
 from .serializers import ProductSerializer
 
 
 class ProductViewSet(viewsets.ModelViewSet):
     """
-    Catalog browsing is open to any authenticated role (customers need to
-    see products to buy them). Writing is restricted:
-      - Admin/Manager: can create/edit/delete any product.
-      - Vendor: can create products (auto-assigned to themselves) and can
-        only edit/delete their own.
-      - Customer: read-only.
+    /api/v1/products/
+
+    Customers/vendors see only active, issue-free, non-expired products
+    unless they are staff (admin/manager) or the owning vendor, who can see
+    everything including drafts and flagged stock.
     """
 
-    queryset = Product.objects.select_related("category", "vendor").all()
     serializer_class = ProductSerializer
-    permission_classes = [IsVendorOwnerOrStaff]
+    permission_classes = [ProductPermission]
     filterset_class = ProductFilter
-    search_fields = ["product_name", "sku", "brand", "description"]
-    ordering_fields = ["mrp", "created_at", "product_name"]
+    search_fields = ["product_name", "brand", "sku", "description"]
+    ordering_fields = ["mrp", "created_date", "product_name"]
 
     def get_queryset(self):
-        qs = super().get_queryset()
+        queryset = Product.objects.select_related("category", "vendor", "inventory")
         user = self.request.user
-        # Customers should only ever see live, purchasable products.
-        if user.is_authenticated and user.is_customer:
-            qs = qs.filter(is_active=True)
-        return qs
+
+        if not user.is_authenticated:
+            return queryset.none()
+        if user.role in (user.Role.ADMIN, user.Role.MANAGER):
+            return queryset
+        if user.role == user.Role.VENDOR:
+            # Vendors see their own catalog (including inactive items) plus
+            # everyone else's active listings.
+            from django.db.models import Q
+
+            return queryset.filter(
+                Q(vendor=user) | Q(is_active=True, issues=Product.IssueStatus.NONE)
+            )
+        return queryset.filter(is_active=True, issues=Product.IssueStatus.NONE)
 
     def perform_create(self, serializer):
         user = self.request.user

@@ -1,28 +1,25 @@
+from django.urls import path
 from rest_framework.routers import DefaultRouter
-from rest_framework_simplejwt.views import TokenBlacklistView, TokenRefreshView
-
-from django.urls import include, path
+from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
 
 from .views import (
     ChangePasswordView,
-    EmailTokenObtainPairView,
-    MeView,
+    CustomTokenObtainPairView,
+    ProfileView,
     RegisterView,
-    UserViewSet,
+    UserAdminViewSet,
 )
 
+app_name = "users"
+
 router = DefaultRouter()
-router.register("users", UserViewSet, basename="user")
+router.register("users", UserAdminViewSet, basename="admin-users")
 
 urlpatterns = [
-    # Auth
-    path("register/", RegisterView.as_view(), name="auth-register"),
-    path("login/", EmailTokenObtainPairView.as_view(), name="auth-login"),
-    path("refresh/", TokenRefreshView.as_view(), name="auth-refresh"),
-    path("logout/", TokenBlacklistView.as_view(), name="auth-logout"),
-    path("me/", MeView.as_view(), name="auth-me"),
-    path("change-password/", ChangePasswordView.as_view(), name="auth-change-password"),
-
-    # Admin user management: /api/auth/users/
-    path("", include(router.urls)),
-]
+    path("register/", RegisterView.as_view(), name="register"),
+    path("login/", CustomTokenObtainPairView.as_view(), name="login"),
+    path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path("token/verify/", TokenVerifyView.as_view(), name="token_verify"),
+    path("me/", ProfileView.as_view(), name="profile"),
+    path("change-password/", ChangePasswordView.as_view(), name="change_password"),
+] + router.urls

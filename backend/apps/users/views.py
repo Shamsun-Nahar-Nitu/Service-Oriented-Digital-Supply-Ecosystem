@@ -1,92 +1,73 @@
-from django.contrib.auth import get_user_model
-from drf_spectacular.utils import extend_schema
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.response import Response
-from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+from .models import User
 from .permissions import IsAdminRole
 from .serializers import (
-    AdminCreateUserSerializer,
+    AdminUserSerializer,
     ChangePasswordSerializer,
-    EmailTokenObtainPairSerializer,
+    CustomTokenObtainPairSerializer,
     RegisterSerializer,
     UserSerializer,
 )
 
-User = get_user_model()
-
 
 class RegisterView(generics.CreateAPIView):
-    """Public sign-up. Anyone can create a customer or vendor account."""
+    """POST /api/v1/auth/register/ — public self-registration (customer/vendor only)."""
 
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
 
-
-class EmailTokenObtainPairView(TokenObtainPairView):
-    """Login. Exchanges email + password for an access/refresh token pair."""
-
-    serializer_class = EmailTokenObtainPairSerializer
-
-
-class MeView(APIView):
-    """Get or update the currently authenticated user's own profile."""
-
-    permission_classes = [permissions.IsAuthenticated]
-
-    @extend_schema(responses=UserSerializer)
-    def get(self, request):
-        return Response(UserSerializer(request.user).data)
-
-    @extend_schema(request=UserSerializer, responses=UserSerializer)
-    def patch(self, request):
-        # Users may edit their own basic details but not their own role.
-        serializer = UserSerializer(
-            request.user, data=request.data, partial=True
-        )
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.validated_data.pop("role", None)
-        serializer.save()
-        return Response(serializer.data)
+        user = serializer.save()
+        return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
 
 
-class ChangePasswordView(APIView):
+class CustomTokenObtainPairView(TokenObtainPairView):
+    """POST /api/v1/auth/login/ — obtain a JWT access/refresh pair with role claims."""
+
+    serializer_class = CustomTokenObtainPairSerializer
+
+
+class ProfileView(generics.RetrieveUpdateAPIView):
+    """GET/PATCH /api/v1/auth/me/ — the authenticated user's own profile."""
+
+    serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    @extend_schema(request=ChangePasswordSerializer, responses=None)
+    def get_object(self):
+        return self.request.user
+
+
+class ChangePasswordView(generics.GenericAPIView):
+    """POST /api/v1/auth/change-password/ — change the authenticated user's password."""
+
+    serializer_class = ChangePasswordSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
     def post(self, request):
-        serializer = ChangePasswordSerializer(
-            data=request.data, context={"request": request}
-        )
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         request.user.set_password(serializer.validated_data["new_password"])
-        request.user.save(update_fields=["password"])
-        return Response({"detail": "Password updated successfully."})
+        request.user.save(update_fields=["password", "updated_date"])
+        return Response({"detail": "Password updated successfully."}, status=status.HTTP_200_OK)
 
 
-class UserViewSet(viewsets.ModelViewSet):
+class UserAdminViewSet(viewsets.ModelViewSet):
     """
-    Admin-only user directory: list/create/update/deactivate any account
-    (managers, vendors, customers, other admins).
+    /api/v1/auth/users/ — full user management, restricted to admins.
+    Lets an admin create Manager/Admin accounts (which self-registration
+    deliberately does not allow), and activate/deactivate or change the
+    role of any account.
     """
 
     queryset = User.objects.all()
+    serializer_class = AdminUserSerializer
     permission_classes = [IsAdminRole]
     filterset_fields = ["role", "is_active"]
-    search_fields = ["email", "first_name", "last_name", "business_name"]
-    ordering_fields = ["created_at", "email"]
-
-    def get_serializer_class(self):
-        if self.action == "create":
-            return AdminCreateUserSerializer
-        return UserSerializer
-
-    def destroy(self, request, *args, **kwargs):
-        # Soft-deactivate instead of hard-deleting a user, so historical
-        # transactions/payments keep a valid foreign key to them.
-        instance = self.get_object()
-        instance.is_active = False
-        instance.save(update_fields=["is_active"])
-        return Response(status=status.HTTP_204_NO_CONTENT)
+    search_fields = ["email", "first_name", "last_name"]
+    ordering_fields = ["created_date", "email"]

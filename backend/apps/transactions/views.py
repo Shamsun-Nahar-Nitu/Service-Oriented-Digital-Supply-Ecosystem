@@ -1,58 +1,83 @@
-from rest_framework import mixins, viewsets
+from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from apps.common.permissions import IsAdminOrManager, IsOwnerOrStaff
+from apps.core.permissions import IsAdminOrManager
 
 from .models import Transaction
-from .serializers import TransactionSerializer
+from .serializers import (
+    CheckoutSerializer,
+    TransactionSerializer,
+    TransactionStatusUpdateSerializer,
+)
 
 
 class TransactionViewSet(
-    mixins.CreateModelMixin,
-    mixins.RetrieveModelMixin,
     mixins.ListModelMixin,
-    mixins.UpdateModelMixin,
+    mixins.RetrieveModelMixin,
     viewsets.GenericViewSet,
 ):
     """
-    Orders. Customers create orders and only ever see their own; admins and
-    managers see and can manage all orders. There is no hard delete - use
-    the `cancel` action instead so the audit trail is preserved.
+    /api/v1/transactions/
+
+    - Customers: see and create only their own orders (via `checkout`).
+    - Vendors: see (read-only) any order that contains one of their products.
+    - Admin/Manager: see every order and can update its status.
     """
 
-    queryset = Transaction.objects.select_related("user").prefetch_related(
-        "items", "items__product"
-    )
     serializer_class = TransactionSerializer
-    permission_classes = [IsOwnerOrStaff]
-    filterset_fields = ["status", "user"]
-    search_fields = ["transaction_number", "user__email"]
-    ordering_fields = ["created_at", "total_amount"]
+    permission_classes = [IsAuthenticated]
+    filterset_fields = ["status"]
+    ordering_fields = ["created_date", "total_amount"]
 
     def get_queryset(self):
-        qs = super().get_queryset()
-        user = self.request.user
-        if user.is_authenticated and not (user.is_admin or user.is_manager):
-            qs = qs.filter(user=user)
-        return qs
+        queryset = Transaction.objects.prefetch_related("items__product").select_related("user")
 
-    def get_permissions(self):
-        if self.action in ("update", "partial_update"):
-            return [IsAdminOrManager()]
-        return super().get_permissions()
+        if getattr(self, "swagger_fake_view", False) or not self.request.user.is_authenticated:
+            return queryset.none()
+
+        user = self.request.user
+        if user.role in (user.Role.ADMIN, user.Role.MANAGER):
+            return queryset
+        if user.is_vendor:
+            return queryset.filter(items__product__vendor=user).distinct()
+        return queryset.filter(user=user)
+
+    @action(detail=False, methods=["post"])
+    def checkout(self, request):
+        """POST /api/v1/transactions/checkout/ — place an order from a cart payload."""
+        serializer = CheckoutSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        transaction_obj = serializer.save()
+        return Response(TransactionSerializer(transaction_obj).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["patch"], permission_classes=[IsAdminOrManager])
+    def update_status(self, request, pk=None):
+        """PATCH /api/v1/transactions/{id}/update_status/ — admin/manager order lifecycle control."""
+        transaction_obj = self.get_object()
+        serializer = TransactionStatusUpdateSerializer(
+            transaction_obj, data=request.data, partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(TransactionSerializer(transaction_obj).data)
 
     @action(detail=True, methods=["post"])
     def cancel(self, request, pk=None):
-        """POST /api/transactions/{id}/cancel/ - restores stock."""
-        txn = self.get_object()
-        if txn.status in (Transaction.Status.CANCELLED, Transaction.Status.DELIVERED):
+        """POST /api/v1/transactions/{id}/cancel/ — a customer may cancel their own pending order."""
+        transaction_obj = self.get_object()
+        user = request.user
+        if not (
+            user.role in (user.Role.ADMIN, user.Role.MANAGER) or transaction_obj.user_id == user.id
+        ):
+            raise PermissionDenied("You can only cancel your own orders.")
+        if transaction_obj.status != Transaction.Status.PENDING:
             return Response(
-                {"detail": f"Cannot cancel a transaction that is already {txn.status}."},
-                status=400,
+                {"detail": "Only pending orders can be cancelled."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
-        for item in txn.items.select_related("product__inventory"):
-            item.product.inventory.restock(item.quantity, user=request.user)
-        txn.status = Transaction.Status.CANCELLED
-        txn.save(update_fields=["status", "updated_at"])
-        return Response(TransactionSerializer(txn).data)
+        transaction_obj.status = Transaction.Status.CANCELLED
+        transaction_obj.save(update_fields=["status", "updated_date"])
+        return Response(TransactionSerializer(transaction_obj).data)

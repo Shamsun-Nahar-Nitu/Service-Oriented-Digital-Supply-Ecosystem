@@ -1,0 +1,22 @@
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+exclude = ["**/migrations/*", "venv", ".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B"]  # pycodestyle, pyflakes, isort, bugbear
+ignore = ["E501"]              # line length is handled by the formatter, not the linter
+
+[tool.ruff.lint.per-file-ignores]
+# Django's environment-split settings pattern relies on `from .base import *`,
+# which ruff can't statically resolve — F405 here is a false positive, not a
+# real undefined-name bug.
+"config/settings/development.py" = ["F403", "F405"]
+"config/settings/production.py" = ["F403", "F405"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["apps", "config"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.development"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]

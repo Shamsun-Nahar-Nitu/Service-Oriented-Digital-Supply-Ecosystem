@@ -1,62 +1,63 @@
 from django.db import models
 
-from apps.common.models import TimeStampedModel
+from apps.core.models import TimeStampedModel
+from apps.products.models import Product
 
 
 class Inventory(TimeStampedModel):
-    """
-    Stock record for a product. One-to-one with Product: this project models
-    a single-warehouse-per-product setup. If multi-warehouse support is ever
-    needed, add a `Warehouse` model and turn this into a FK instead of O2O.
-    """
+    """One inventory record per product — the current stock level and reorder threshold."""
 
-    product = models.OneToOneField(
-        "products.Product", on_delete=models.CASCADE, related_name="inventory"
-    )
-    quantity_available = models.PositiveIntegerField(default=0)
+    product = models.OneToOneField(Product, related_name="inventory", on_delete=models.CASCADE)
+    quantity_in_stock = models.PositiveIntegerField(default=0)
     reorder_level = models.PositiveIntegerField(
-        default=10, help_text="Trigger a restock alert when stock falls to/below this."
+        default=10, help_text="Quantity at/below which the product should be restocked."
     )
-    warehouse_location = models.CharField(max_length=255, blank=True)
+    warehouse_location = models.CharField(max_length=150, blank=True)
     last_restocked_at = models.DateTimeField(null=True, blank=True)
-    updated_by = models.ForeignKey(
-        "users.User", on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
-    )
 
     class Meta:
+        db_table = "inventory"
+        verbose_name = "Inventory"
         verbose_name_plural = "Inventory"
-        ordering = ["-updated_at"]
+        ordering = ["-created_date"]
 
     def __str__(self):
-        return f"{self.product.product_name}: {self.quantity_available} in stock"
+        return f"{self.product.product_name} — {self.quantity_in_stock} in stock"
 
     @property
-    def is_low_stock(self) -> bool:
-        return self.quantity_available <= self.reorder_level
+    def is_low_stock(self):
+        return self.quantity_in_stock <= self.reorder_level
 
     @property
-    def is_in_stock(self) -> bool:
-        return self.quantity_available > 0
+    def is_in_stock(self):
+        return self.quantity_in_stock > 0
 
-    def deduct(self, amount: int):
-        """Used by the transactions app when an order is placed."""
-        if amount > self.quantity_available:
-            raise ValueError("Not enough stock available.")
-        self.quantity_available -= amount
-        self.save(update_fields=["quantity_available", "updated_at"])
 
-    def restock(self, amount: int, user=None):
-        from django.utils import timezone
+class StockMovement(TimeStampedModel):
+    """
+    Immutable audit trail of every stock change. Rows are created by the
+    application (restocks, sales, returns, damage write-offs) rather than
+    edited — `Inventory.quantity_in_stock` is the current total and this
+    table explains how it got there.
+    """
 
-        self.quantity_available += amount
-        self.last_restocked_at = timezone.now()
-        if user:
-            self.updated_by = user
-        self.save(
-            update_fields=[
-                "quantity_available",
-                "last_restocked_at",
-                "updated_by",
-                "updated_at",
-            ]
-        )
+    class MovementType(models.TextChoices):
+        RESTOCK = "RESTOCK", "Restock"
+        SALE = "SALE", "Sale"
+        RETURN = "RETURN", "Return"
+        ADJUSTMENT = "ADJUSTMENT", "Adjustment"
+        DAMAGE = "DAMAGE", "Damage"
+
+    inventory = models.ForeignKey(Inventory, related_name="movements", on_delete=models.CASCADE)
+    movement_type = models.CharField(max_length=20, choices=MovementType.choices)
+    quantity = models.IntegerField(
+        help_text="Positive for stock added, negative for stock removed."
+    )
+    note = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        db_table = "stock_movements"
+        ordering = ["-created_date"]
+
+    def __str__(self):
+        return f"{self.movement_type} {self.quantity:+d} — {self.inventory.product.product_name}"

@@ -1,42 +1,30 @@
-from django.db import transaction as db_transaction
-from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.products.models import Product
 
 from .models import Transaction, TransactionItem
+from .services import CheckoutService
 
 
-class TransactionItemReadSerializer(serializers.ModelSerializer):
+class TransactionItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source="product.product_name", read_only=True)
-    sku = serializers.CharField(source="product.sku", read_only=True)
-    line_total = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
+    subtotal = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
 
     class Meta:
         model = TransactionItem
-        fields = ("id", "product", "product_name", "sku", "quantity", "unit_price", "line_total")
-        read_only_fields = fields
-
-
-class TransactionItemWriteSerializer(serializers.Serializer):
-    """Input shape for creating an order: just product + quantity.
-    Price is derived server-side from the product's current selling price -
-    never trust a client-supplied price."""
-
-    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.filter(is_active=True))
-    quantity = serializers.IntegerField(min_value=1)
+        fields = ["id", "product", "product_name", "quantity", "unit_price", "subtotal"]
+        read_only_fields = ["id", "unit_price"]
 
 
 class TransactionSerializer(serializers.ModelSerializer):
-    items = TransactionItemReadSerializer(many=True, read_only=True)
-    order_items = TransactionItemWriteSerializer(many=True, write_only=True)
-    user = serializers.PrimaryKeyRelatedField(read_only=True)
-    user_email = serializers.EmailField(source="user.email", read_only=True)
-    payment = serializers.SerializerMethodField()
+    """Read-only representation of an order, including its line items."""
+
+    items = TransactionItemSerializer(many=True, read_only=True)
+    user_email = serializers.CharField(source="user.email", read_only=True)
 
     class Meta:
         model = Transaction
-        fields = (
+        fields = [
             "id",
             "transaction_number",
             "user",
@@ -46,60 +34,50 @@ class TransactionSerializer(serializers.ModelSerializer):
             "shipping_address",
             "notes",
             "items",
-            "order_items",
-            "payment",
-            "created_at",
-            "updated_at",
-        )
-        read_only_fields = (
-            "id",
-            "transaction_number",
-            "total_amount",
-            "created_at",
-            "updated_at",
-        )
+            "created_date",
+            "updated_date",
+        ]
+        read_only_fields = fields
 
-    @extend_schema_field(serializers.DictField(allow_null=True))
-    def get_payment(self, obj):
-        # Avoid a circular import at module load time.
-        from apps.payments.serializers import PaymentSerializer
 
-        if hasattr(obj, "payment"):
-            return PaymentSerializer(obj.payment).data
-        return None
+class CheckoutItemInputSerializer(serializers.Serializer):
+    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
+    quantity = serializers.IntegerField(min_value=1)
 
-    def validate_order_items(self, value):
+
+class CheckoutSerializer(serializers.Serializer):
+    """
+    Write serializer for POST /api/v1/transactions/checkout/.
+
+    Accepts a cart-like payload:
+        {
+          "shipping_address": "...",
+          "items": [{"product": 1, "quantity": 2}, ...]
+        }
+    and delegates the actual order creation to CheckoutService.
+    """
+
+    shipping_address = serializers.CharField(required=False, allow_blank=True, default="")
+    items = CheckoutItemInputSerializer(many=True)
+
+    def validate_items(self, value):
         if not value:
-            raise serializers.ValidationError("A transaction needs at least one item.")
-        for entry in value:
-            product = entry["product"]
-            quantity = entry["quantity"]
-            inventory = getattr(product, "inventory", None)
-            available = inventory.quantity_available if inventory else 0
-            if available < quantity:
-                raise serializers.ValidationError(
-                    f"Not enough stock for '{product.product_name}' "
-                    f"(requested {quantity}, available {available})."
-                )
+            raise serializers.ValidationError("At least one item is required to check out.")
         return value
 
-    @db_transaction.atomic
     def create(self, validated_data):
-        order_items = validated_data.pop("order_items")
         user = self.context["request"].user
-        txn = Transaction.objects.create(user=user, **validated_data)
+        service = CheckoutService(
+            user=user,
+            items=validated_data["items"],
+            shipping_address=validated_data.get("shipping_address", ""),
+        )
+        return service.execute()
 
-        for entry in order_items:
-            product = entry["product"]
-            quantity = entry["quantity"]
-            TransactionItem.objects.create(
-                transaction=txn,
-                product=product,
-                quantity=quantity,
-                unit_price=product.selling_price,
-            )
-            # Deduct stock immediately on order placement.
-            product.inventory.deduct(quantity)
 
-        txn.recalculate_total()
-        return txn
+class TransactionStatusUpdateSerializer(serializers.ModelSerializer):
+    """Used by admin/manager to move an order through its lifecycle."""
+
+    class Meta:
+        model = Transaction
+        fields = ["status"]
