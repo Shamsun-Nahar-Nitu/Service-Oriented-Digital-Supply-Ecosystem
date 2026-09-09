@@ -43,6 +43,7 @@ import AdminUsersPage from './pages/admin/AdminUsersPage';
  * There is no genuinely public storefront to serve, so <RequireAuth />
  * wraps the entire app other than the auth pages themselves, rather than
  * just the checkout/orders/account routes a typical storefront would gate.
+ * Each role also receives its own separate panel, enforced by <RequireRole />.
  */
 export default function App() {
   return (
@@ -57,16 +58,17 @@ export default function App() {
               </Route>
 
               <Route element={<RequireAuth />}>
-                <Route element={<MainLayout />}>
-                  <Route path="/" element={<HomePage />} />
-                  <Route path="/products" element={<ProductsPage />} />
-                  <Route path="/products/:id" element={<ProductDetailPage />} />
-                  <Route path="/cart" element={<CartPage />} />
-                  <Route path="/checkout" element={<CheckoutPage />} />
-                  <Route path="/orders" element={<OrdersPage />} />
-                  <Route path="/orders/:id" element={<OrderDetailPage />} />
-                  <Route path="/profile" element={<ProfilePage />} />
-                  <Route path="/unauthorized" element={<UnauthorizedPage />} />
+                <Route element={<RequireRole roles={['CUSTOMER']} />}>
+                  <Route element={<MainLayout />}>
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/products" element={<ProductsPage />} />
+                    <Route path="/products/:id" element={<ProductDetailPage />} />
+                    <Route path="/cart" element={<CartPage />} />
+                    <Route path="/checkout" element={<CheckoutPage />} />
+                    <Route path="/orders" element={<OrdersPage />} />
+                    <Route path="/orders/:id" element={<OrderDetailPage />} />
+                    <Route path="/profile" element={<ProfilePage />} />
+                  </Route>
                 </Route>
 
                 <Route element={<RequireRole roles={['VENDOR']} />}>
@@ -75,6 +77,7 @@ export default function App() {
                     <Route path="/vendor/products/new" element={<VendorProductFormPage />} />
                     <Route path="/vendor/products/:id/edit" element={<VendorProductFormPage />} />
                     <Route path="/vendor/orders" element={<VendorOrdersPage />} />
+                    <Route path="/profile" element={<ProfilePage />} />
                   </Route>
                 </Route>
 
@@ -86,6 +89,7 @@ export default function App() {
                     <Route path="/admin/categories" element={<AdminCategoriesPage />} />
                     <Route path="/admin/inventory" element={<AdminInventoryPage />} />
                     <Route path="/admin/orders" element={<AdminOrdersPage />} />
+                    <Route path="/profile" element={<ProfilePage />} />
                   </Route>
                 </Route>
 
@@ -96,6 +100,7 @@ export default function App() {
                 </Route>
               </Route>
 
+              <Route path="/unauthorized" element={<UnauthorizedPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
             <ToastViewport />

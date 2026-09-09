@@ -65,44 +65,48 @@ class Command(BaseCommand):
         electronics, _ = Category.objects.get_or_create(name="Electronics")
         groceries, _ = Category.objects.get_or_create(name="Groceries")
 
-        demo_products = [
-            {
-                "product_name": "Wireless Mouse",
-                "sku": "WM-001",
-                "brand": "Logitech",
-                "category": electronics,
-                "mrp": Decimal("1500.00"),
-                "discount_percentage": Decimal("10.00"),
-                "stock": 40,
-            },
-            {
-                "product_name": "Mechanical Keyboard",
-                "sku": "KB-002",
-                "brand": "Keychron",
-                "category": electronics,
-                "mrp": Decimal("6500.00"),
-                "discount_percentage": Decimal("5.00"),
-                "stock": 15,
-            },
-            {
-                "product_name": "Organic Coffee 500g",
-                "sku": "GRO-010",
-                "brand": "Local Roasters",
-                "category": groceries,
-                "mrp": Decimal("650.00"),
-                "discount_percentage": Decimal("0.00"),
-                "stock": 100,
-            },
-        ]
+        # --- 20X BULK SEEDING LOOP ---
+        self.stdout.write("Generating 20x bulk products...")
+        
+        for i in range(1, 21):
+            demo_products = [
+                {
+                    "product_name": f"Wireless Mouse (Batch {i})",
+                    "sku": f"WM-001-{i}",
+                    "brand": "Logitech",
+                    "category": electronics,
+                    "mrp": Decimal("1500.00"),
+                    "discount_percentage": Decimal("10.00"),
+                    "stock": 40,
+                },
+                {
+                    "product_name": f"Mechanical Keyboard (Batch {i})",
+                    "sku": f"KB-002-{i}",
+                    "brand": "Keychron",
+                    "category": electronics,
+                    "mrp": Decimal("6500.00"),
+                    "discount_percentage": Decimal("5.00"),
+                    "stock": 15,
+                },
+                {
+                    "product_name": f"Organic Coffee 500g (Batch {i})",
+                    "sku": f"GRO-010-{i}",
+                    "brand": "Local Roasters",
+                    "category": groceries,
+                    "mrp": Decimal("650.00"),
+                    "discount_percentage": Decimal("0.00"),
+                    "stock": 100,
+                },
+            ]
 
-        for data in demo_products:
-            stock = data.pop("stock")
-            product, created = Product.objects.get_or_create(
-                sku=data["sku"], defaults={**data, "vendor": vendor}
-            )
-            if created:
-                Inventory.objects.filter(product=product).update(quantity_in_stock=stock)
-                self.stdout.write(self.style.SUCCESS(f"Created product: {product.product_name}"))
+            for data in demo_products:
+                stock = data.pop("stock")
+                product, created = Product.objects.get_or_create(
+                    sku=data["sku"], defaults={**data, "vendor": vendor}
+                )
+                if created:
+                    Inventory.objects.filter(product=product).update(quantity_in_stock=stock)
+                    self.stdout.write(self.style.SUCCESS(f"Created product: {product.product_name}"))
 
         self.stdout.write(
             self.style.SUCCESS(

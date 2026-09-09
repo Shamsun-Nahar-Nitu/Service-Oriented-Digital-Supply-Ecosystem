@@ -5,9 +5,7 @@ import {
   User,
   Menu,
   X,
-  Package,
   ClipboardList,
-  LayoutDashboard,
   LogOut,
   Settings,
   Store,
@@ -27,7 +25,7 @@ const NAV_LINKS = [
 ];
 
 export function Header() {
-  const { user, isAuthenticated, isVendor, isStaff, logout } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const { itemCount } = useCart();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -111,16 +109,6 @@ export function Header() {
               <DropdownMenuItem as={Link} to="/profile">
                 <Settings className="h-4 w-4" aria-hidden="true" /> Profile settings
               </DropdownMenuItem>
-              {isVendor && (
-                <DropdownMenuItem as={Link} to="/vendor/products">
-                  <Package className="h-4 w-4" aria-hidden="true" /> Vendor dashboard
-                </DropdownMenuItem>
-              )}
-              {isStaff && (
-                <DropdownMenuItem as={Link} to="/admin/products">
-                  <LayoutDashboard className="h-4 w-4" aria-hidden="true" /> Admin console
-                </DropdownMenuItem>
-              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout} className="text-danger-600 hover:bg-danger-50">
                 <LogOut className="h-4 w-4" aria-hidden="true" /> Log out

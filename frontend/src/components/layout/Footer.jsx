@@ -6,7 +6,7 @@ const APP_NAME = import.meta.env.VITE_APP_NAME || 'ShopNest';
 export function Footer() {
   return (
     <footer className="border-t border-ink-100 bg-white">
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-4">
+      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-3">
         <div>
           <Link to="/" className="flex items-center gap-2 font-display text-lg font-bold text-ink-900">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-ember-500 text-white">
@@ -29,16 +29,8 @@ export function Footer() {
           ]}
         />
         <FooterColumn
-          title="Sell"
-          links={[
-            { to: '/register', label: 'Become a vendor' },
-            { to: '/vendor/products', label: 'Vendor dashboard' },
-          ]}
-        />
-        <FooterColumn
           title="Account"
           links={[
-            { to: '/login', label: 'Log in' },
             { to: '/profile', label: 'Profile settings' },
           ]}
         />
