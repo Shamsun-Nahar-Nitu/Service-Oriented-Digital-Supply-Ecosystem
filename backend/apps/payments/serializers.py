@@ -1,3 +1,4 @@
+from django.conf import settings
 from rest_framework import serializers
 
 from .models import Payment
@@ -17,6 +18,12 @@ class PaymentSerializer(serializers.ModelSerializer):
             "method",
             "status",
             "amount",
+            "gateway",
+            "session_key",
+            "gateway_transaction_id",
+            "validation_id",
+            "bank_transaction_id",
+            "currency",
             "gateway_reference",
             "paid_at",
             "created_date",
@@ -25,7 +32,14 @@ class PaymentSerializer(serializers.ModelSerializer):
         read_only_fields = [
             "id",
             "status",
+            "amount",
             "gateway_reference",
+            "gateway",
+            "session_key",
+            "gateway_transaction_id",
+            "validation_id",
+            "bank_transaction_id",
+            "currency",
             "paid_at",
             "created_date",
             "updated_date",
@@ -43,13 +57,7 @@ class PaymentSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         transaction = attrs.get("transaction")
-        if transaction and attrs.get("amount") is None:
+        if transaction:
             attrs["amount"] = transaction.total_amount
+            attrs["currency"] = settings.CURRENCY_CODE
         return attrs
-
-
-class PaymentConfirmSerializer(serializers.Serializer):
-    """Simulates a payment gateway callback confirming (or failing) a payment."""
-
-    success = serializers.BooleanField(default=True)
-    gateway_reference = serializers.CharField(required=False, allow_blank=True, default="")

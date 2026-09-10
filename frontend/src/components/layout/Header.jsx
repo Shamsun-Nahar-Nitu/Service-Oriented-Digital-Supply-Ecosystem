@@ -72,18 +72,20 @@ export function Header() {
         </div>
 
         <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
-          <Link
-            to="/cart"
-            aria-label={`Cart, ${itemCount} item${itemCount === 1 ? '' : 's'}`}
-            className="relative flex h-10 w-10 items-center justify-center rounded-lg hover:bg-white/10"
-          >
-            <ShoppingCart className="h-5 w-5" aria-hidden="true" />
-            {itemCount > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-ember-500 px-1 text-[11px] font-bold text-white">
-                {itemCount > 99 ? '99+' : itemCount}
-              </span>
-            )}
-          </Link>
+          {isAuthenticated && user.role === 'CUSTOMER' && (
+            <Link
+              to="/cart"
+              aria-label={`Cart, ${itemCount} item${itemCount === 1 ? '' : 's'}`}
+              className="relative flex h-10 w-10 items-center justify-center rounded-lg hover:bg-white/10"
+            >
+              <ShoppingCart className="h-5 w-5" aria-hidden="true" />
+              {itemCount > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-ember-500 px-1 text-[11px] font-bold text-white">
+                  {itemCount > 99 ? '99+' : itemCount}
+                </span>
+              )}
+            </Link>
+          )}
 
           {isAuthenticated ? (
             <DropdownMenu
@@ -103,9 +105,26 @@ export function Header() {
                 <p className="text-xs text-ink-500">{ROLE_LABELS[user.role]}</p>
               </div>
               <DropdownMenuSeparator />
-              <DropdownMenuItem as={Link} to="/orders">
-                <ClipboardList className="h-4 w-4" aria-hidden="true" /> My orders
-              </DropdownMenuItem>
+              {user.role === 'CUSTOMER' && (
+                <DropdownMenuItem as={Link} to="/cart">
+                  <ShoppingCart className="h-4 w-4" aria-hidden="true" /> Cart
+                </DropdownMenuItem>
+              )}
+              {user.role === 'VENDOR' && (
+                <DropdownMenuItem as={Link} to="/vendor/products">
+                  <Store className="h-4 w-4" aria-hidden="true" /> Vendor panel
+                </DropdownMenuItem>
+              )}
+              {(user.role === 'ADMIN' || user.role === 'MANAGER') && (
+                <DropdownMenuItem as={Link} to="/admin/products">
+                  <Settings className="h-4 w-4" aria-hidden="true" /> Management
+                </DropdownMenuItem>
+              )}
+              {user.role === 'CUSTOMER' && (
+                <DropdownMenuItem as={Link} to="/orders">
+                  <ClipboardList className="h-4 w-4" aria-hidden="true" /> My orders
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem as={Link} to="/profile">
                 <Settings className="h-4 w-4" aria-hidden="true" /> Profile settings
               </DropdownMenuItem>
@@ -150,6 +169,18 @@ export function Header() {
                 {link.label}
               </Link>
             ))}
+            {isAuthenticated && user.role === 'CUSTOMER' && (
+              <>
+                <Link to="/cart" onClick={() => setMobileOpen(false)} className="rounded-md px-3 py-2.5 text-sm font-medium text-ink-100 hover:bg-white/10">Cart</Link>
+                <Link to="/orders" onClick={() => setMobileOpen(false)} className="rounded-md px-3 py-2.5 text-sm font-medium text-ink-100 hover:bg-white/10">Orders</Link>
+              </>
+            )}
+            {isAuthenticated && user.role === 'VENDOR' && (
+              <Link to="/vendor/products" onClick={() => setMobileOpen(false)} className="rounded-md px-3 py-2.5 text-sm font-medium text-ink-100 hover:bg-white/10">Vendor panel</Link>
+            )}
+            {isAuthenticated && (user.role === 'ADMIN' || user.role === 'MANAGER') && (
+              <Link to="/admin/products" onClick={() => setMobileOpen(false)} className="rounded-md px-3 py-2.5 text-sm font-medium text-ink-100 hover:bg-white/10">Management</Link>
+            )}
             {!isAuthenticated && (
               <div className={cn('mt-2 flex gap-2 border-t border-white/10 pt-3')}>
                 <Link

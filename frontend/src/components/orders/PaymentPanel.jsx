@@ -1,43 +1,23 @@
 import { useState } from 'react';
-import { CheckCircle2, XCircle, ShieldAlert } from 'lucide-react';
+import { ShieldAlert } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Select } from '../ui/Select';
 import { Badge } from '../ui/Badge';
 import { paymentsApi } from '../../api/payments';
 import { useAsync } from '../../hooks/useAsync';
-import { useToast } from '../../context/ToastContext';
 import { getErrorMessage } from '../../utils/errors';
 import { formatCurrency, formatDateTime } from '../../utils/format';
 import { PAYMENT_METHODS } from '../../utils/constants';
 
-/**
- * There's no real payment gateway behind this API — `confirm` simulates the
- * webhook a provider like Stripe would send (see
- * apps/payments/views.py::PaymentViewSet.confirm). This panel makes that
- * explicit rather than pretending it's a real charge, and lets a person
- * step through initiate → confirm exactly as the API models it.
- */
-export function PaymentPanel({ transactionId, payment, onPaymentChange }) {
+export function PaymentPanel({ transactionId, payment }) {
   const [method, setMethod] = useState(PAYMENT_METHODS[0].value);
   const { run, loading, error } = useAsync();
-  const toast = useToast();
 
   async function handleInitiate() {
     try {
       const created = await run(() => paymentsApi.initiate({ transaction: transactionId, method }));
-      onPaymentChange(created);
-    } catch {
-      // Error surfaced inline below via `error`.
-    }
-  }
-
-  async function handleConfirm(success) {
-    try {
-      const updated = await run(() => paymentsApi.confirm(payment.id, { success }));
-      onPaymentChange(updated);
-      toast[success ? 'success' : 'error'](
-        success ? 'Payment confirmed.' : 'Payment marked as failed.'
-      );
+      if (!created.gateway_url) throw new Error('The payment gateway URL was not returned.');
+      window.location.href = created.gateway_url;
     } catch {
       // Error surfaced inline below via `error`.
     }
@@ -49,7 +29,7 @@ export function PaymentPanel({ transactionId, payment, onPaymentChange }) {
         <h2 className="font-display text-base font-semibold text-ink-900">Payment</h2>
         <p className="mt-1 flex items-center gap-1.5 text-xs text-ink-400">
           <ShieldAlert className="h-3.5 w-3.5" aria-hidden="true" />
-          Demo checkout — no real charge is made.
+          You will be redirected to the secure payment gateway.
         </p>
         <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
           <Select
@@ -81,25 +61,6 @@ export function PaymentPanel({ transactionId, payment, onPaymentChange }) {
         {payment.gateway_reference && <Row label="Reference" value={payment.gateway_reference} />}
         {payment.paid_at && <Row label="Paid at" value={formatDateTime(payment.paid_at)} />}
       </dl>
-
-      {payment.status === 'PENDING' && (
-        <div className="mt-4 flex flex-wrap gap-2 border-t border-ink-100 pt-4">
-          <Button size="sm" onClick={() => handleConfirm(true)} loading={loading}>
-            <CheckCircle2 className="h-4 w-4" aria-hidden="true" /> Confirm payment
-          </Button>
-          <Button size="sm" variant="ghost" onClick={() => handleConfirm(false)} loading={loading}>
-            <XCircle className="h-4 w-4" aria-hidden="true" /> Simulate failure
-          </Button>
-        </div>
-      )}
-
-      {payment.status === 'FAILED' && (
-        <div className="mt-4 border-t border-ink-100 pt-4">
-          <Button size="sm" onClick={() => handleConfirm(true)} loading={loading}>
-            Retry payment
-          </Button>
-        </div>
-      )}
 
       {error && <p className="mt-2 text-sm text-danger-600">{getErrorMessage(error)}</p>}
     </div>

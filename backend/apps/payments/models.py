@@ -7,17 +7,12 @@ from apps.transactions.models import Transaction
 
 class Payment(TimeStampedModel):
     """
-    One payment per transaction. `method` covers the common e-commerce
-    payment rails; `gateway_reference` stores whatever ID a real payment
-    gateway (Stripe/Razorpay/etc.) would return, kept as a plain string so
-    swapping providers doesn't require a schema change.
+    One payment per transaction. Gateway identifiers are stored as plain
+    strings so provider responses can be audited without exposing secrets.
     """
 
     class Method(models.TextChoices):
-        CARD = "CARD", "Credit/Debit Card"
-        UPI = "UPI", "UPI"
-        NET_BANKING = "NET_BANKING", "Net Banking"
-        WALLET = "WALLET", "Wallet"
+        SSLCOMMERZ = "SSLCOMMERZ", "SSLCOMMERZ"
         COD = "COD", "Cash on Delivery"
 
     class Status(models.TextChoices):
@@ -29,11 +24,17 @@ class Payment(TimeStampedModel):
     transaction = models.OneToOneField(
         Transaction, related_name="payment", on_delete=models.CASCADE
     )
-    method = models.CharField(max_length=20, choices=Method.choices)
+    method = models.CharField(max_length=20, choices=Method.choices, default=Method.SSLCOMMERZ)
     status = models.CharField(
         max_length=20, choices=Status.choices, default=Status.PENDING, db_index=True
     )
     amount = models.DecimalField(max_digits=12, decimal_places=2)
+    gateway = models.CharField(max_length=30, default="SSLCOMMERZ")
+    session_key = models.CharField(max_length=100, blank=True, db_index=True)
+    gateway_transaction_id = models.CharField(max_length=100, blank=True, db_index=True)
+    validation_id = models.CharField(max_length=100, blank=True)
+    bank_transaction_id = models.CharField(max_length=100, blank=True)
+    currency = models.CharField(max_length=3, default="BDT")
     gateway_reference = models.CharField(max_length=100, blank=True)
     paid_at = models.DateTimeField(null=True, blank=True)
 
@@ -44,11 +45,13 @@ class Payment(TimeStampedModel):
     def __str__(self):
         return f"Payment for {self.transaction.transaction_number} — {self.status}"
 
-    def mark_successful(self, gateway_reference=""):
+    def mark_successful(self, gateway_reference="", validation_id="", bank_transaction_id=""):
         self.status = self.Status.SUCCESS
         self.gateway_reference = gateway_reference or self.gateway_reference
+        self.validation_id = validation_id or self.validation_id
+        self.bank_transaction_id = bank_transaction_id or self.bank_transaction_id
         self.paid_at = timezone.now()
-        self.save(update_fields=["status", "gateway_reference", "paid_at", "updated_date"])
+        self.save(update_fields=["status", "gateway_reference", "validation_id", "bank_transaction_id", "paid_at", "updated_date"])
 
         self.transaction.status = Transaction.Status.CONFIRMED
         self.transaction.save(update_fields=["status", "updated_date"])

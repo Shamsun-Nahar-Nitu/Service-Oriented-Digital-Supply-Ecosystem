@@ -24,6 +24,9 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import NotFoundPage from './pages/NotFoundPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
+import PaymentSuccessPage from './pages/PaymentSuccessPage';
+import PaymentFailPage from './pages/PaymentFailPage';
+import PaymentCancelPage from './pages/PaymentCancelPage';
 
 import VendorProductsPage from './pages/vendor/VendorProductsPage';
 import VendorProductFormPage from './pages/vendor/VendorProductFormPage';
@@ -36,15 +39,6 @@ import AdminInventoryPage from './pages/admin/AdminInventoryPage';
 import AdminOrdersPage from './pages/admin/AdminOrdersPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
 
-/**
- * Every endpoint on this API requires an authenticated request — even
- * GET /products/ and GET /categories/ return an empty queryset for an
- * anonymous user (see apps/products/views.py::ProductViewSet.get_queryset).
- * There is no genuinely public storefront to serve, so <RequireAuth />
- * wraps the entire app other than the auth pages themselves, rather than
- * just the checkout/orders/account routes a typical storefront would gate.
- * Each role also receives its own separate panel, enforced by <RequireRole />.
- */
 export default function App() {
   return (
     <BrowserRouter>
@@ -57,12 +51,19 @@ export default function App() {
                 <Route path="/register" element={<RegisterPage />} />
               </Route>
 
+              <Route element={<MainLayout />}>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/products" element={<ProductsPage />} />
+                <Route path="/products/:id" element={<ProductDetailPage />} />
+              </Route>
+
+              <Route path="/payment/success" element={<PaymentSuccessPage />} />
+              <Route path="/payment/fail" element={<PaymentFailPage />} />
+              <Route path="/payment/cancel" element={<PaymentCancelPage />} />
+
               <Route element={<RequireAuth />}>
                 <Route element={<RequireRole roles={['CUSTOMER']} />}>
                   <Route element={<MainLayout />}>
-                    <Route path="/" element={<HomePage />} />
-                    <Route path="/products" element={<ProductsPage />} />
-                    <Route path="/products/:id" element={<ProductDetailPage />} />
                     <Route path="/cart" element={<CartPage />} />
                     <Route path="/checkout" element={<CheckoutPage />} />
                     <Route path="/orders" element={<OrdersPage />} />

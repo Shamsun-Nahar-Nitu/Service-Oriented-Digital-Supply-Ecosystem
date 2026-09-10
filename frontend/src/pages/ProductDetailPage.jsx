@@ -4,6 +4,7 @@ import { ShoppingCart, Zap, ChevronRight, Package } from 'lucide-react';
 import { productsApi } from '../api/products';
 import { useFetch } from '../hooks/useFetch';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { ProductThumb } from '../components/ui/ProductThumb';
 import { PriceTag } from '../components/ui/PriceTag';
@@ -17,6 +18,7 @@ export default function ProductDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addItem } = useCart();
+  const { isAuthenticated } = useAuth();
   const toast = useToast();
   const [quantity, setQuantity] = useState(1);
 
@@ -46,11 +48,19 @@ export default function ProductDetailPage() {
   const unavailable = !product.is_purchasable;
 
   function handleAddToCart() {
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: window.location.pathname, action: 'add-to-cart' } });
+      return;
+    }
     addItem(product, quantity);
     toast.success(`Added ${quantity} × "${product.product_name}" to your cart.`);
   }
 
   function handleBuyNow() {
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: window.location.pathname, action: 'buy-now' } });
+      return;
+    }
     addItem(product, quantity);
     navigate('/checkout');
   }

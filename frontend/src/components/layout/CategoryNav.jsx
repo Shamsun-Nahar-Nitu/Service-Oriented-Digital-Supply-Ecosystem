@@ -1,7 +1,6 @@
 import { Link, useSearchParams } from 'react-router-dom';
 import { categoriesApi } from '../../api/categories';
 import { useFetch } from '../../hooks/useFetch';
-import { useAuth } from '../../context/AuthContext';
 import { cn } from '../../utils/cn';
 
 /**
@@ -17,15 +16,10 @@ import { cn } from '../../utils/cn';
 export function CategoryNav() {
   const [searchParams] = useSearchParams();
   const activeCategory = searchParams.get('category');
-  const { isAuthenticated } = useAuth();
-
   const { data, loading } = useFetch(
     () => categoriesApi.list({ is_active: true, page_size: 100, ordering: 'name' }),
-    [isAuthenticated],
-    { skip: !isAuthenticated }
+    []
   );
-
-  if (!isAuthenticated) return null;
 
   const topLevel = (data?.results ?? []).filter((category) => !category.parent);
 

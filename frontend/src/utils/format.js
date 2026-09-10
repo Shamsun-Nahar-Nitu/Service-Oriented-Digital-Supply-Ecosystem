@@ -1,5 +1,5 @@
-const CURRENCY_CODE = import.meta.env.VITE_CURRENCY_CODE || 'USD';
-const CURRENCY_LOCALE = import.meta.env.VITE_CURRENCY_LOCALE || 'en-US';
+const CURRENCY_CODE = import.meta.env.VITE_CURRENCY_CODE || 'BDT';
+const CURRENCY_LOCALE = import.meta.env.VITE_CURRENCY_LOCALE || 'en-BD';
 
 const currencyFormatter = new Intl.NumberFormat(CURRENCY_LOCALE, {
   style: 'currency',

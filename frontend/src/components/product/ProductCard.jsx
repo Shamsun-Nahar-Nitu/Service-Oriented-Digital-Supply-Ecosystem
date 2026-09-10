@@ -1,10 +1,11 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart } from 'lucide-react';
 import { ProductThumb } from '../ui/ProductThumb';
 import { PriceTag } from '../ui/PriceTag';
 import { Badge } from '../ui/Badge';
 import { useCart } from '../../context/CartContext';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
 
 /**
  * Standard catalog tile, used on the home page, product listing, and any
@@ -13,7 +14,9 @@ import { useToast } from '../../context/ToastContext';
  */
 export function ProductCard({ product }) {
   const { addItem } = useCart();
+  const { isAuthenticated } = useAuth();
   const toast = useToast();
+  const navigate = useNavigate();
 
   const outOfStock = product.quantity_in_stock <= 0;
   const unavailable = !product.is_purchasable;
@@ -21,6 +24,10 @@ export function ProductCard({ product }) {
   function handleAddToCart(event) {
     event.preventDefault();
     event.stopPropagation();
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: window.location.pathname, action: 'add-to-cart' } });
+      return;
+    }
     addItem(product, 1);
     toast.success(`Added "${product.product_name}" to your cart.`);
   }

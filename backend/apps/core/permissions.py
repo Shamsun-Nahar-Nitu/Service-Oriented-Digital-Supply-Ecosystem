@@ -84,6 +84,18 @@ class IsStaffOrReadOnly(BasePermission):
         return request.user.role in (Role.ADMIN, Role.MANAGER)
 
 
+class IsStaffOrPublicReadOnly(BasePermission):
+    """Allow public catalog reads while keeping category writes staff-only."""
+
+    def has_permission(self, request, view):
+        if request.method in SAFE_METHODS:
+            return True
+        if not (request.user and request.user.is_authenticated):
+            return False
+        Role = request.user.Role
+        return request.user.role in (Role.ADMIN, Role.MANAGER)
+
+
 class IsOwnerOrAdminManager(BasePermission):
     """
     Object-level permission: the resource's owner (matched via a `user` or

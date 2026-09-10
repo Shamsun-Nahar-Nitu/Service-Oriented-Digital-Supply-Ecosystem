@@ -5,11 +5,11 @@ import { getHomePath } from '../utils/roleHome';
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from?.pathname;
+  const from = location.state?.from;
 
   function handleSuccess(user) {
-    const destination = from && from !== '/' ? from : getHomePath(user.role);
-    navigate(destination, { replace: true });
+    const destination = typeof from === 'string' ? from : from?.pathname;
+    navigate(destination || getHomePath(user.role), { replace: true });
   }
 
   return (

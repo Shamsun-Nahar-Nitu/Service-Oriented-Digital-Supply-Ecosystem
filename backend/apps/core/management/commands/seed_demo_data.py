@@ -62,51 +62,60 @@ class Command(BaseCommand):
                 self.style.SUCCESS("Created customer: customer@example.com / Customer@12345")
             )
 
-        electronics, _ = Category.objects.get_or_create(name="Electronics")
-        groceries, _ = Category.objects.get_or_create(name="Groceries")
+        category_names = [
+            "Electronics",
+            "Mobile Phones",
+            "Home Appliances",
+            "Groceries",
+            "Fashion",
+            "Beauty & Personal Care",
+            "Books",
+            "Sports & Fitness",
+            "Home & Kitchen",
+            "Stationery",
+        ]
+        categories = {
+            name: Category.objects.get_or_create(name=name)[0] for name in category_names
+        }
 
-        # --- 20X BULK SEEDING LOOP ---
-        self.stdout.write("Generating 20x bulk products...")
-        
-        for i in range(1, 21):
-            demo_products = [
-                {
-                    "product_name": f"Wireless Mouse (Batch {i})",
-                    "sku": f"WM-001-{i}",
-                    "brand": "Logitech",
-                    "category": electronics,
-                    "mrp": Decimal("1500.00"),
-                    "discount_percentage": Decimal("10.00"),
-                    "stock": 40,
-                },
-                {
-                    "product_name": f"Mechanical Keyboard (Batch {i})",
-                    "sku": f"KB-002-{i}",
-                    "brand": "Keychron",
-                    "category": electronics,
-                    "mrp": Decimal("6500.00"),
-                    "discount_percentage": Decimal("5.00"),
-                    "stock": 15,
-                },
-                {
-                    "product_name": f"Organic Coffee 500g (Batch {i})",
-                    "sku": f"GRO-010-{i}",
-                    "brand": "Local Roasters",
-                    "category": groceries,
-                    "mrp": Decimal("650.00"),
-                    "discount_percentage": Decimal("0.00"),
-                    "stock": 100,
-                },
-            ]
+        demo_products = [
+            ("Anker Soundcore Bluetooth Speaker", "ELEC-ANK-001", "Anker", "Electronics", "5490", "12", 18),
+            ("Sony WH-CH520 Wireless Headphones", "ELEC-SON-002", "Sony", "Electronics", "6500", "8", 12),
+            ("Logitech M331 Silent Wireless Mouse", "ELEC-LOG-003", "Logitech", "Electronics", "2200", "15", 35),
+            ("Samsung Galaxy A15 5G", "MOB-SAM-004", "Samsung", "Mobile Phones", "28999", "5", 10),
+            ("Xiaomi Redmi Note 13", "MOB-XIA-005", "Xiaomi", "Mobile Phones", "24999", "7", 14),
+            ("Philips 1.5L Electric Kettle", "APP-PHI-006", "Philips", "Home Appliances", "2850", "10", 20),
+            ("Vision Blender 1.5L", "APP-VIS-007", "Vision", "Home Appliances", "4200", "6", 16),
+            ("Fresh Miniket Rice 5kg", "GRO-FRE-008", "Fresh", "Groceries", "460", "3", 80),
+            ("Teer Soybean Oil 5L", "GRO-TEE-009", "Teer", "Groceries", "890", "4", 65),
+            ("Aarong Cotton Panjabi", "FAS-AAR-010", "Aarong", "Fashion", "3200", "18", 22),
+            ("Yellow Canvas Handbag", "FAS-YEL-011", "Yellow", "Fashion", "1850", "10", 28),
+            ("Nivea Sun Protect SPF 50", "BEA-NIV-012", "Nivea", "Beauty & Personal Care", "1150", "9", 30),
+            ("The Alchemist Paperback", "BOK-PEN-013", "Penguin", "Books", "520", "0", 24),
+            ("Bold: How to Be Brave", "BOK-RAN-014", "Random House", "Books", "780", "15", 18),
+            ("Decathlon Yoga Mat 6mm", "SPT-DEC-015", "Decathlon", "Sports & Fitness", "1750", "12", 25),
+            ("RFL Nonstick Cookware Set", "HOM-RFL-016", "RFL", "Home & Kitchen", "3850", "8", 14),
+            ("Butterfly Stainless Saucepan", "HOM-BUT-017", "Butterfly", "Home & Kitchen", "1650", "5", 20),
+            ("Matador A5 Hardcover Notebook", "STA-MAT-018", "Matador", "Stationery", "280", "20", 55),
+            ("Faber-Castell Colour Pencil Set", "STA-FAB-019", "Faber-Castell", "Stationery", "650", "10", 32),
+        ]
 
-            for data in demo_products:
-                stock = data.pop("stock")
-                product, created = Product.objects.get_or_create(
-                    sku=data["sku"], defaults={**data, "vendor": vendor}
-                )
-                if created:
-                    Inventory.objects.filter(product=product).update(quantity_in_stock=stock)
-                    self.stdout.write(self.style.SUCCESS(f"Created product: {product.product_name}"))
+        self.stdout.write("Generating varied demo products...")
+        for name, sku, brand, category, mrp, discount, stock in demo_products:
+            product, created = Product.objects.get_or_create(
+                sku=sku,
+                defaults={
+                    "product_name": name,
+                    "brand": brand,
+                    "category": categories[category],
+                    "mrp": Decimal(mrp),
+                    "discount_percentage": Decimal(discount),
+                    "vendor": vendor,
+                },
+            )
+            if created:
+                Inventory.objects.filter(product=product).update(quantity_in_stock=stock)
+                self.stdout.write(self.style.SUCCESS(f"Created product: {product.product_name}"))
 
         self.stdout.write(
             self.style.SUCCESS(
