@@ -1,4 +1,3 @@
-from django.conf import settings
 from rest_framework import serializers
 
 from .models import Payment
@@ -59,5 +58,10 @@ class PaymentSerializer(serializers.ModelSerializer):
         transaction = attrs.get("transaction")
         if transaction:
             attrs["amount"] = transaction.total_amount
-            attrs["currency"] = settings.CURRENCY_CODE
+            attrs["currency"] = "BDT"
+            method = attrs.get("method", Payment.Method.ONLINE)
+            if method == Payment.Method.ONLINE and not transaction.user.phone_number.strip():
+                raise serializers.ValidationError(
+                    {"transaction": "A phone number is required for online payment."}
+                )
         return attrs

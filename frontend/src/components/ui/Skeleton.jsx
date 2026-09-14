@@ -10,7 +10,6 @@ export function SkeletonText({ lines = 1, className }) {
     <div className="flex flex-col gap-2">
       {Array.from({ length: lines }).map((_, index) => (
         <Skeleton
-          // eslint-disable-next-line react/no-array-index-key
           key={index}
           className={cn('h-3', index === lines - 1 && lines > 1 ? 'w-2/3' : 'w-full', className)}
         />
@@ -36,7 +35,6 @@ export function SkeletonRow({ columns = 4 }) {
   return (
     <tr>
       {Array.from({ length: columns }).map((_, index) => (
-        // eslint-disable-next-line react/no-array-index-key
         <td key={index} className="px-4 py-3">
           <Skeleton className="h-4 w-full" />
         </td>

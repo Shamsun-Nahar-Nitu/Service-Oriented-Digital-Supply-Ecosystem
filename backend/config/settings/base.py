@@ -20,14 +20,19 @@ environ.Env.read_env(BASE_DIR / ".env")
 SECRET_KEY = env("SECRET_KEY", default="django-insecure-change-me-in-production")
 DEBUG = env.bool("DEBUG", default=False)
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
-CURRENCY_CODE = env("CURRENCY_CODE", default="BDT")
-CURRENCY_SYMBOL = env("CURRENCY_SYMBOL", default="৳")
+CURRENCY_CODE = "BDT"
+CURRENCY_SYMBOL = "৳"
 
 SSLCOMMERZ_STORE_ID = env("SSLCOMMERZ_STORE_ID", default="")
 SSLCOMMERZ_STORE_PASSWORD = env("SSLCOMMERZ_STORE_PASSWORD", default="")
-SSLCOMMERZ_SANDBOX = env.bool("SSLCOMMERZ_SANDBOX", default=True)
+SSLCOMMERZ_IS_SANDBOX = env.bool("SSLCOMMERZ_IS_SANDBOX", default=True)
 SSLCOMMERZ_BASE_URL = env(
-    "SSLCOMMERZ_BASE_URL", default="https://sandbox-gw.sslcommerz.com"
+    "SSLCOMMERZ_BASE_URL",
+    default=(
+        "https://sandbox-gw.sslcommerz.com"
+        if SSLCOMMERZ_IS_SANDBOX
+        else "https://securepay.sslcommerz.com"
+    ),
 )
 SSLCOMMERZ_SUCCESS_URL = env("SSLCOMMERZ_SUCCESS_URL", default="")
 SSLCOMMERZ_FAIL_URL = env("SSLCOMMERZ_FAIL_URL", default="")
@@ -115,7 +120,7 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "en-BD"
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True

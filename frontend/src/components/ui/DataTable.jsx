@@ -44,7 +44,6 @@ export function DataTable({
           <tbody className="divide-y divide-ink-100">
             {loading &&
               Array.from({ length: skeletonRows }).map((_, index) => (
-                // eslint-disable-next-line react/no-array-index-key
                 <SkeletonRow key={index} columns={columns.length} />
               ))}
             {!loading &&

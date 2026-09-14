@@ -90,6 +90,7 @@ export default function App() {
                     <Route path="/admin/categories" element={<AdminCategoriesPage />} />
                     <Route path="/admin/inventory" element={<AdminInventoryPage />} />
                     <Route path="/admin/orders" element={<AdminOrdersPage />} />
+                    <Route path="/admin/orders/:id" element={<OrderDetailPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
                   </Route>
                 </Route>

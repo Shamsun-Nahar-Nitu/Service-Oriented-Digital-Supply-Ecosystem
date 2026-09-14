@@ -67,7 +67,6 @@ export default function HomePage() {
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
             {categoriesLoading
               ? Array.from({ length: 6 }).map((_, index) => (
-                  // eslint-disable-next-line react/no-array-index-key
                   <div key={index} className="h-20 animate-pulse rounded-xl bg-ink-100" />
                 ))
               : topCategories.map((category) => (

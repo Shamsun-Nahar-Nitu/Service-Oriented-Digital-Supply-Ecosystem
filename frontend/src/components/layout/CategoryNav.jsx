@@ -39,7 +39,6 @@ export function CategoryNav() {
         </Link>
         {loading
           ? Array.from({ length: 6 }).map((_, index) => (
-              // eslint-disable-next-line react/no-array-index-key
               <span key={index} className="h-8 w-24 shrink-0 animate-pulse rounded-full bg-ink-100" />
             ))
           : topLevel.map((category) => (

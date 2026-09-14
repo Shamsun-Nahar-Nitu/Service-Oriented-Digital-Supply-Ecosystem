@@ -12,7 +12,7 @@ class Payment(TimeStampedModel):
     """
 
     class Method(models.TextChoices):
-        SSLCOMMERZ = "SSLCOMMERZ", "SSLCOMMERZ"
+        ONLINE = "ONLINE", "Online payment"
         COD = "COD", "Cash on Delivery"
 
     class Status(models.TextChoices):
@@ -24,7 +24,7 @@ class Payment(TimeStampedModel):
     transaction = models.OneToOneField(
         Transaction, related_name="payment", on_delete=models.CASCADE
     )
-    method = models.CharField(max_length=20, choices=Method.choices, default=Method.SSLCOMMERZ)
+    method = models.CharField(max_length=20, choices=Method.choices, default=Method.ONLINE)
     status = models.CharField(
         max_length=20, choices=Status.choices, default=Status.PENDING, db_index=True
     )
@@ -46,6 +46,8 @@ class Payment(TimeStampedModel):
         return f"Payment for {self.transaction.transaction_number} — {self.status}"
 
     def mark_successful(self, gateway_reference="", validation_id="", bank_transaction_id=""):
+        if self.status == self.Status.SUCCESS:
+            return
         self.status = self.Status.SUCCESS
         self.gateway_reference = gateway_reference or self.gateway_reference
         self.validation_id = validation_id or self.validation_id
@@ -57,5 +59,7 @@ class Payment(TimeStampedModel):
         self.transaction.save(update_fields=["status", "updated_date"])
 
     def mark_failed(self):
+        if self.status == self.Status.SUCCESS:
+            return
         self.status = self.Status.FAILED
         self.save(update_fields=["status", "updated_date"])

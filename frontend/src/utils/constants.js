@@ -67,10 +67,7 @@ export const PRODUCT_ISSUE_LABELS = {
 };
 
 export const PAYMENT_METHODS = [
-  { value: 'CARD', label: 'Credit / Debit Card' },
-  { value: 'UPI', label: 'UPI' },
-  { value: 'NET_BANKING', label: 'Net Banking' },
-  { value: 'WALLET', label: 'Wallet' },
+  { value: 'ONLINE', label: 'Online Payment' },
   { value: 'COD', label: 'Cash on Delivery' },
 ];
 

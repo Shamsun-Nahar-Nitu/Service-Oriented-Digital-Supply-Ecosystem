@@ -37,7 +37,6 @@ export default function VendorOrdersPage() {
         <div className="flex flex-col gap-3">
           {loading
             ? Array.from({ length: 3 }).map((_, index) => (
-                // eslint-disable-next-line react/no-array-index-key
                 <div key={index} className="h-24 animate-pulse rounded-xl bg-ink-100" />
               ))
             : data.results.map((transaction) => <OrderCard key={transaction.id} transaction={transaction} />)}

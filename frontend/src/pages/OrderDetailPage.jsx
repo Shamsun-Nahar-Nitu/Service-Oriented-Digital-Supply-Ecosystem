@@ -166,8 +166,13 @@ export default function OrderDetailPage() {
         </div>
 
         <div className="flex flex-col gap-4">
-          {isOwner && isCustomer ? (
-            <PaymentPanel transactionId={transaction.id} payment={payment} onPaymentChange={handlePaymentChange} />
+          {(isOwner && isCustomer) || isStaff ? (
+            <PaymentPanel
+              transactionId={transaction.id}
+              payment={payment}
+              isStaff={isStaff}
+              onPaymentChange={handlePaymentChange}
+            />
           ) : (
             payment && (
               <div className="rounded-xl border border-ink-100 bg-white p-5">

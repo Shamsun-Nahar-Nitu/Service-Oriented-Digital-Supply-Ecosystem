@@ -29,25 +29,60 @@ class SSLCommerzService:
         return payload
 
     def create_session(self, payment):
-        transaction_id = f"TXN-{payment.transaction.transaction_number}-{uuid.uuid4().hex[:8]}"
+        transaction = payment.transaction
+        user = transaction.user
+        if not user.phone_number.strip():
+            raise SSLCommerzError(
+                "A phone number is required before starting an online payment."
+            )
+        if payment.currency != "BDT":
+            raise SSLCommerzError("SSLCOMMERZ payments must use BDT currency.")
+        required_urls = {
+            "success_url": settings.SSLCOMMERZ_SUCCESS_URL,
+            "fail_url": settings.SSLCOMMERZ_FAIL_URL,
+            "cancel_url": settings.SSLCOMMERZ_CANCEL_URL,
+            "ipn_url": settings.SSLCOMMERZ_IPN_URL,
+        }
+        missing_urls = [name for name, value in required_urls.items() if not value]
+        if missing_urls:
+            raise SSLCommerzError(
+                f"SSLCOMMERZ callback URLs are not configured: {', '.join(missing_urls)}."
+            )
+
+        transaction_id = f"TXN-{uuid.uuid4().hex[:26]}"
+        customer_address = transaction.shipping_address.strip() or user.address.strip() or "N/A"
+        product_names = ", ".join(
+            item.product.product_name for item in transaction.items.select_related("product")
+        )
+        product_categories = ", ".join(
+            item.product.category.name
+            for item in transaction.items.select_related("product__category")
+        )
         payload = self._post(
             "/gwprocess/v4/api.php",
             {
                 "store_id": settings.SSLCOMMERZ_STORE_ID,
                 "store_passwd": settings.SSLCOMMERZ_STORE_PASSWORD,
                 "total_amount": str(payment.amount),
-                "currency": settings.CURRENCY_CODE,
+                "currency": payment.currency,
                 "tran_id": transaction_id,
                 "success_url": settings.SSLCOMMERZ_SUCCESS_URL,
                 "fail_url": settings.SSLCOMMERZ_FAIL_URL,
                 "cancel_url": settings.SSLCOMMERZ_CANCEL_URL,
                 "ipn_url": settings.SSLCOMMERZ_IPN_URL,
-                "cus_name": payment.transaction.user.full_name or payment.transaction.user.email,
-                "cus_email": payment.transaction.user.email,
-                "shipping_method": "YES",
-                "product_name": "E-commerce order",
-                "product_category": "General",
-                "product_profile": "general",
+                "cus_name": user.full_name or user.email,
+                "cus_email": user.email,
+                "cus_add1": customer_address,
+                "cus_city": "N/A",
+                "cus_state": "N/A",
+                "cus_postcode": "N/A",
+                "cus_country": "Bangladesh",
+                "cus_phone": user.phone_number,
+                "shipping_method": "NO",
+                "num_of_item": transaction.items.count(),
+                "product_name": product_names[:255],
+                "product_category": product_categories[:100],
+                "product_profile": "physical-goods",
             },
         )
         payment.gateway_transaction_id = transaction_id
@@ -75,12 +110,14 @@ class SSLCommerzService:
     @staticmethod
     def is_valid_payment(payload, payment):
         try:
-            amount_matches = Decimal(str(payload.get("amount", "0"))) == payment.amount
+            amount = Decimal(str(payload.get("amount", "0")))
         except (ArithmeticError, ValueError):
-            amount_matches = False
+            return False
+        amount_matches = amount == payment.amount == payment.transaction.total_amount
         return (
             payload.get("status") in ("VALID", "VALIDATED")
             and payload.get("tran_id") == payment.gateway_transaction_id
-            and payload.get("currency") == payment.currency
+            and payload.get("currency", "").upper() == "BDT"
+            and payment.currency == "BDT"
             and amount_matches
         )

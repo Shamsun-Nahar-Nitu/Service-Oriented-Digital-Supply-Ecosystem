@@ -1,5 +1,8 @@
+from django.db import transaction as db_transaction
 from django.http import JsonResponse
 from rest_framework import mixins, serializers, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -58,6 +61,66 @@ class PaymentViewSet(
             data["gateway_url"] = self.gateway_payload.get("GatewayPageURL")
         return Response(data, status=status.HTTP_201_CREATED)
 
+    @action(detail=True, methods=["post"])
+    def retry(self, request, pk=None):
+        payment = self.get_object()
+        if payment.transaction.user_id != request.user.id:
+            raise PermissionDenied("Only the customer who placed the order can retry payment.")
+        if payment.method != Payment.Method.ONLINE:
+            return Response(
+                {"detail": "Only failed online payments can be retried."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if payment.status != Payment.Status.FAILED:
+            return Response(
+                {"detail": "Only failed payments can be retried."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        payment.status = Payment.Status.PENDING
+        payment.amount = payment.transaction.total_amount
+        payment.currency = "BDT"
+        payment.gateway_transaction_id = ""
+        payment.session_key = ""
+        payment.save(
+            update_fields=[
+                "status",
+                "amount",
+                "currency",
+                "gateway_transaction_id",
+                "session_key",
+                "updated_date",
+            ]
+        )
+        try:
+            gateway_payload = SSLCommerzService().create_session(payment)
+        except SSLCommerzError as exc:
+            payment.mark_failed()
+            raise serializers.ValidationError({"gateway": str(exc)}) from exc
+
+        data = PaymentSerializer(payment).data
+        data["gateway_url"] = gateway_payload.get("GatewayPageURL")
+        return Response(data)
+
+    @action(detail=True, methods=["post"])
+    def mark_cod_collected(self, request, pk=None):
+        user = request.user
+        if user.role not in (user.Role.ADMIN, user.Role.MANAGER):
+            raise PermissionDenied("Only admin or manager users can collect COD payments.")
+        payment = self.get_object()
+        if payment.method != Payment.Method.COD:
+            return Response(
+                {"detail": "Only COD payments can be collected this way."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if payment.status != Payment.Status.PENDING:
+            return Response(
+                {"detail": "Only pending COD payments can be collected."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        payment.mark_successful()
+        return Response(PaymentSerializer(payment).data)
+
 
 class SSLCommerzCallbackView(APIView):
     permission_classes = [AllowAny]
@@ -67,31 +130,39 @@ class SSLCommerzCallbackView(APIView):
         return self.post(request, callback_type)
 
     def post(self, request, callback_type):
+        if callback_type not in ("success", "fail", "cancel", "ipn"):
+            return JsonResponse({"detail": "Unsupported callback."}, status=404)
         transaction_id = request.data.get("tran_id", "")
-        try:
-            payment = Payment.objects.get(gateway_transaction_id=transaction_id)
-        except Payment.DoesNotExist:
-            return JsonResponse({"detail": "Payment not found."}, status=404)
+        with db_transaction.atomic():
+            try:
+                payment = Payment.objects.select_for_update().get(
+                    gateway_transaction_id=transaction_id
+                )
+            except Payment.DoesNotExist:
+                return JsonResponse({"detail": "Payment not found."}, status=404)
 
-        if callback_type in ("fail", "cancel"):
-            payment.mark_failed()
-            return JsonResponse({"status": payment.status})
+            if payment.status == Payment.Status.SUCCESS:
+                return JsonResponse({"status": Payment.Status.SUCCESS})
 
-        try:
-            payload = SSLCommerzService().validate_transaction(
-                transaction_id, request.data.get("val_id", "")
+            if callback_type in ("fail", "cancel"):
+                payment.mark_failed()
+                return JsonResponse({"status": payment.status})
+
+            try:
+                payload = SSLCommerzService().validate_transaction(
+                    transaction_id, request.data.get("val_id", "")
+                )
+            except SSLCommerzError:
+                payment.mark_failed()
+                return JsonResponse({"status": Payment.Status.FAILED}, status=400)
+
+            if not SSLCommerzService.is_valid_payment(payload, payment):
+                payment.mark_failed()
+                return JsonResponse({"status": Payment.Status.FAILED}, status=400)
+
+            payment.mark_successful(
+                gateway_reference=payload.get("tran_id", transaction_id),
+                validation_id=payload.get("val_id", request.data.get("val_id", "")),
+                bank_transaction_id=payload.get("bank_tran_id", ""),
             )
-        except SSLCommerzError:
-            payment.mark_failed()
-            return JsonResponse({"status": Payment.Status.FAILED}, status=400)
-
-        if not SSLCommerzService.is_valid_payment(payload, payment):
-            payment.mark_failed()
-            return JsonResponse({"status": Payment.Status.FAILED}, status=400)
-
-        payment.mark_successful(
-            gateway_reference=payload.get("tran_id", transaction_id),
-            validation_id=payload.get("val_id", request.data.get("val_id", "")),
-            bank_transaction_id=payload.get("bank_tran_id", ""),
-        )
-        return JsonResponse({"status": Payment.Status.SUCCESS})
+            return JsonResponse({"status": Payment.Status.SUCCESS})

@@ -121,7 +121,7 @@ function RowActions({ transaction, onUpdated, onError }) {
       <Button size="sm" variant="outline" onClick={handleUpdate} loading={loading} disabled={!status}>
         Apply
       </Button>
-      <Button as={Link} to={`/orders/${transaction.id}`} variant="ghost" size="icon" aria-label="View order">
+      <Button as={Link} to={`/admin/orders/${transaction.id}`} variant="ghost" size="icon" aria-label="View order">
         <Eye className="h-4 w-4" aria-hidden="true" />
       </Button>
     </div>
