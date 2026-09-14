@@ -79,7 +79,12 @@ export default function ProductDetailPage() {
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
         <div className="aspect-square w-full max-w-md">
-          <ProductThumb name={product.product_name} seed={product.sku} className="h-full w-full" />
+          <ProductThumb
+            name={product.product_name}
+            seed={product.sku}
+            imageUrl={product.image_url}
+            className="h-full w-full"
+          />
         </div>
 
         <div>

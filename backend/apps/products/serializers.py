@@ -22,6 +22,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "sku",
             "description",
             "brand",
+            "image_url",
             "category",
             "category_name",
             "vendor",

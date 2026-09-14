@@ -38,7 +38,12 @@ export function ProductCard({ product }) {
       className="group flex flex-col overflow-hidden rounded-xl border border-ink-100 bg-white transition-shadow hover:shadow-raised"
     >
       <div className="relative aspect-square w-full overflow-hidden">
-        <ProductThumb name={product.product_name} seed={product.sku} className="h-full w-full" />
+        <ProductThumb
+          name={product.product_name}
+          seed={product.sku}
+          imageUrl={product.image_url}
+          className="h-full w-full"
+        />
         {product.discount_percentage > 0 && (
           <Badge tone="ember" className="absolute left-2 top-2">
             -{Number(product.discount_percentage)}%

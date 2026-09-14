@@ -23,7 +23,12 @@ export function CartItem({ item }) {
   return (
     <div className="flex gap-4 border-b border-ink-100 py-4 last:border-b-0">
       <Link to={`/products/${product.id}`} className="shrink-0">
-        <ProductThumb name={product.product_name} seed={product.sku} className="h-20 w-20" />
+        <ProductThumb
+          name={product.product_name}
+          seed={product.sku}
+          imageUrl={product.image_url}
+          className="h-20 w-20"
+        />
       </Link>
 
       <div className="flex flex-1 flex-col gap-1">

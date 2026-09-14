@@ -30,6 +30,7 @@ class Product(TimeStampedModel):
     sku = models.CharField(max_length=50, unique=True, help_text="Stock keeping unit.")
     description = models.TextField(blank=True)
     brand = models.CharField(max_length=100, blank=True, db_index=True)
+    image_url = models.URLField(max_length=500, blank=True)
 
     category = models.ForeignKey(Category, related_name="products", on_delete=models.PROTECT)
     vendor = models.ForeignKey(
