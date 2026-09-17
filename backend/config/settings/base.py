@@ -65,6 +65,7 @@ LOCAL_APPS = [
     "apps.inventory",
     "apps.transactions",
     "apps.payments",
+    "apps.support", 
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -150,8 +151,9 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_CLASSES": (
         "rest_framework.throttling.UserRateThrottle",
         "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.ScopedRateThrottle",
     ),
-    "DEFAULT_THROTTLE_RATES": {"user": "1000/day", "anon": "100/day"},
+    "DEFAULT_THROTTLE_RATES": {"user": "1000/day", "anon": "100/day", "faq-bot": "60/min"},
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
 }
 

@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom';
 import { Header } from './Header';
 import { CategoryNav } from './CategoryNav';
 import { Footer } from './Footer';
+import { ChatWidget } from '../support/ChatWidget'; 
 
 /** Shell for every public/customer-facing page: header, category strip, footer. */
 export function MainLayout() {
@@ -13,6 +14,7 @@ export function MainLayout() {
         <Outlet />
       </main>
       <Footer />
+      <ChatWidget />
     </div>
   );
 }
