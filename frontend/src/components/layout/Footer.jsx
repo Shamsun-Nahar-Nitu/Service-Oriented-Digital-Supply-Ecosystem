@@ -36,7 +36,7 @@ export function Footer() {
         />
       </div>
       <div className="border-t border-ink-100 px-4 py-4 text-center text-xs text-ink-400 sm:px-6">
-        © {new Date().getFullYear()} {APP_NAME}. Built as a demo storefront for a learning project.
+        © {new Date().getFullYear()} {APP_NAME}. All rights reserved. · Developed by <a href="https://github.com/Shamsun-Nahar-Nitu" target="_blank" rel="noopener noreferrer">Shamsun Nahar</a>.
       </div>
     </footer>
   );
