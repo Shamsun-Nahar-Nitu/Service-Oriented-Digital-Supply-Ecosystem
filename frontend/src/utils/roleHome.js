@@ -6,10 +6,11 @@ import { ROLES } from './constants';
 export function getHomePath(role) {
   switch (role) {
     case ROLES.ADMIN:
+      return '/admin/dashboard';
     case ROLES.MANAGER:
-      return '/admin/products';
+      return '/admin/monitoring';
     case ROLES.VENDOR:
-      return '/vendor/products';
+      return '/vendor/dashboard';
     case ROLES.CUSTOMER:
     default:
       return '/';

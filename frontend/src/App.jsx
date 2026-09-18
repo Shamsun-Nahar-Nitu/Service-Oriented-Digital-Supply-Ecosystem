@@ -31,6 +31,7 @@ import PaymentCancelPage from './pages/PaymentCancelPage';
 import VendorProductsPage from './pages/vendor/VendorProductsPage';
 import VendorProductFormPage from './pages/vendor/VendorProductFormPage';
 import VendorOrdersPage from './pages/vendor/VendorOrdersPage';
+import VendorDashboardPage from './pages/vendor/VendorDashboardPage';
 
 import AdminProductsPage from './pages/admin/AdminProductsPage';
 import AdminProductFormPage from './pages/admin/AdminProductFormPage';
@@ -38,6 +39,8 @@ import AdminCategoriesPage from './pages/admin/AdminCategoriesPage';
 import AdminInventoryPage from './pages/admin/AdminInventoryPage';
 import AdminOrdersPage from './pages/admin/AdminOrdersPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
+import AdminDashboardPage from './pages/admin/AdminDashboardPage';
+import ManagerDashboardPage from './pages/admin/ManagerDashboardPage';
 
 export default function App() {
   return (
@@ -74,6 +77,7 @@ export default function App() {
 
                 <Route element={<RequireRole roles={['VENDOR']} />}>
                   <Route element={<VendorLayout />}>
+                    <Route path="/vendor/dashboard" element={<VendorDashboardPage />} />
                     <Route path="/vendor/products" element={<VendorProductsPage />} />
                     <Route path="/vendor/products/new" element={<VendorProductFormPage />} />
                     <Route path="/vendor/products/:id/edit" element={<VendorProductFormPage />} />
@@ -84,6 +88,7 @@ export default function App() {
 
                 <Route element={<RequireRole roles={['ADMIN', 'MANAGER']} />}>
                   <Route element={<AdminLayout />}>
+                    <Route path="/admin/monitoring" element={<ManagerDashboardPage />} />
                     <Route path="/admin/products" element={<AdminProductsPage />} />
                     <Route path="/admin/products/new" element={<AdminProductFormPage />} />
                     <Route path="/admin/products/:id/edit" element={<AdminProductFormPage />} />
@@ -97,6 +102,7 @@ export default function App() {
 
                 <Route element={<RequireRole roles={['ADMIN']} />}>
                   <Route element={<AdminLayout />}>
+                    <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
                     <Route path="/admin/users" element={<AdminUsersPage />} />
                   </Route>
                 </Route>

@@ -15,6 +15,7 @@ import { useCart } from '../../context/CartContext';
 import { SearchBar } from './SearchBar';
 import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator } from '../ui/DropdownMenu';
 import { ROLE_LABELS } from '../../utils/constants';
+import { getHomePath } from '../../utils/roleHome';
 import { cn } from '../../utils/cn';
 
 const APP_NAME = import.meta.env.VITE_APP_NAME || 'ShopNest';
@@ -111,12 +112,12 @@ export function Header() {
                 </DropdownMenuItem>
               )}
               {user.role === 'VENDOR' && (
-                <DropdownMenuItem as={Link} to="/vendor/products">
+                <DropdownMenuItem as={Link} to={getHomePath(user.role)}>
                   <Store className="h-4 w-4" aria-hidden="true" /> Vendor panel
                 </DropdownMenuItem>
               )}
               {(user.role === 'ADMIN' || user.role === 'MANAGER') && (
-                <DropdownMenuItem as={Link} to="/admin/products">
+                <DropdownMenuItem as={Link} to={getHomePath(user.role)}>
                   <Settings className="h-4 w-4" aria-hidden="true" /> Management
                 </DropdownMenuItem>
               )}
@@ -176,10 +177,10 @@ export function Header() {
               </>
             )}
             {isAuthenticated && user.role === 'VENDOR' && (
-              <Link to="/vendor/products" onClick={() => setMobileOpen(false)} className="rounded-md px-3 py-2.5 text-sm font-medium text-ink-100 hover:bg-white/10">Vendor panel</Link>
+              <Link to={getHomePath(user.role)} onClick={() => setMobileOpen(false)} className="rounded-md px-3 py-2.5 text-sm font-medium text-ink-100 hover:bg-white/10">Vendor panel</Link>
             )}
             {isAuthenticated && (user.role === 'ADMIN' || user.role === 'MANAGER') && (
-              <Link to="/admin/products" onClick={() => setMobileOpen(false)} className="rounded-md px-3 py-2.5 text-sm font-medium text-ink-100 hover:bg-white/10">Management</Link>
+              <Link to={getHomePath(user.role)} onClick={() => setMobileOpen(false)} className="rounded-md px-3 py-2.5 text-sm font-medium text-ink-100 hover:bg-white/10">Management</Link>
             )}
             {!isAuthenticated && (
               <div className={cn('mt-2 flex gap-2 border-t border-white/10 pt-3')}>

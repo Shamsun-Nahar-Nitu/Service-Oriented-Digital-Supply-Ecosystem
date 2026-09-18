@@ -50,8 +50,11 @@ class CheckoutServiceTests(APITestCase):
 
         self.product.inventory.refresh_from_db()
         self.assertEqual(self.product.inventory.quantity_in_stock, 7)
-        # selling_price = 1000 - 20% = 800; 3 units = 2400
-        self.assertEqual(transaction_obj.total_amount, Decimal("2400.00"))
+        # selling_price = 1000 - 20% = 800; 3 units = 2400 item subtotal,
+        # plus the 1% platform fee the customer pays on top (24.00) = 2424 total.
+        self.assertEqual(transaction_obj.items_subtotal, Decimal("2400.00"))
+        self.assertEqual(transaction_obj.platform_fee, Decimal("24.00"))
+        self.assertEqual(transaction_obj.total_amount, Decimal("2424.00"))
         self.assertEqual(transaction_obj.items.count(), 1)
 
     def test_checkout_fails_when_stock_insufficient(self):

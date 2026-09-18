@@ -24,6 +24,7 @@ api_v1_patterns = [
     path("transactions/", include("apps.transactions.urls")),
     path("payments/", include("apps.payments.urls")),
     path("support/", include("apps.support.urls")), 
+    path("finance/", include("apps.finance.urls")), 
 ]
 
 urlpatterns = [

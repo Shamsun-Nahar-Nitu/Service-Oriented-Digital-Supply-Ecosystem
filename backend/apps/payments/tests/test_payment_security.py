@@ -85,10 +85,10 @@ class PaymentSecurityTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data["amount"], "900.00")
+        self.assertEqual(response.data["amount"], "909.00")
         self.assertEqual(response.data["currency"], "BDT")
         self.assertEqual(response.data["method"], "ONLINE")
-        self.assertEqual(post.call_args.kwargs["data"]["total_amount"], "900.00")
+        self.assertEqual(post.call_args.kwargs["data"]["total_amount"], "909.00")
         self.assertEqual(post.call_args.kwargs["data"]["currency"], "BDT")
         payload = post.call_args.kwargs["data"]
         self.assertEqual(payload["store_id"], "test-store")
@@ -354,7 +354,7 @@ class PaymentSecurityTests(APITestCase):
                 "tran_id": "gateway-1",
                 "val_id": "validation-1",
                 "bank_tran_id": "bank-1",
-                "amount": "900.00",
+                "amount": "909.00",
                 "currency": "BDT",
             }
         )
@@ -382,7 +382,12 @@ class PaymentSecurityTests(APITestCase):
         self.assertEqual(payment.transaction.status, "CONFIRMED")
 
     @override_settings(
-        SSLCOMMERZ_STORE_ID="test-store", SSLCOMMERZ_STORE_PASSWORD="test-password"
+        SSLCOMMERZ_STORE_ID="test-store",
+        SSLCOMMERZ_STORE_PASSWORD="test-password",
+        SSLCOMMERZ_SUCCESS_URL="http://localhost/success",
+        SSLCOMMERZ_FAIL_URL="http://localhost/fail",
+        SSLCOMMERZ_CANCEL_URL="http://localhost/cancel",
+        SSLCOMMERZ_IPN_URL="http://localhost/ipn",
     )
     @patch("apps.payments.services.requests.post")
     def test_failed_online_payment_can_retry_without_new_payment_row(self, post):
@@ -422,7 +427,7 @@ class PaymentSecurityTests(APITestCase):
             format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data["amount"], "900.00")
+        self.assertEqual(response.data["amount"], "909.00")
         self.assertEqual(response.data["status"], "PENDING")
 
         confirm_response = self.client.post(
