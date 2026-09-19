@@ -13,6 +13,7 @@ import { Badge } from '../components/ui/Badge';
 import { PageSpinner } from '../components/ui/Spinner';
 import { ErrorState } from '../components/ui/ErrorState';
 import { PRODUCT_ISSUE } from '../utils/constants';
+import { savePendingCartIntent } from '../utils/pendingCartIntent';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -49,7 +50,8 @@ export default function ProductDetailPage() {
 
   function handleAddToCart() {
     if (!isAuthenticated) {
-      navigate('/login', { state: { from: window.location.pathname, action: 'add-to-cart' } });
+      savePendingCartIntent(product, quantity, 'add-to-cart');
+      navigate('/login', { state: { from: '/cart' } });
       return;
     }
     addItem(product, quantity);
@@ -58,7 +60,8 @@ export default function ProductDetailPage() {
 
   function handleBuyNow() {
     if (!isAuthenticated) {
-      navigate('/login', { state: { from: window.location.pathname, action: 'buy-now' } });
+      savePendingCartIntent(product, quantity, 'buy-now');
+      navigate('/login', { state: { from: '/checkout' } });
       return;
     }
     addItem(product, quantity);

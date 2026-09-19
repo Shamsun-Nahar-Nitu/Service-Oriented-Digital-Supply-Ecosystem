@@ -57,7 +57,7 @@ STOPWORDS = frozenset(
     can could should would will shall may might must have has had
     of in on at to from for with without by about into over under again
     and or but if then than so as too very just also
-    get got give gives please thanks thank hi hello hey ok okay
+    get got give gives please ok okay
     want need like know tell help
     """.split()
 )
@@ -188,7 +188,7 @@ class FaqIndex:
         #     by phrase length so longer phrases count for more.
         phrase_bonus = 0.0
         for phrase in entry.keywords:
-            if len(phrase) < 3:
+            if len(phrase) < 2:
                 continue
             if re.search(rf"\b{re.escape(phrase)}\b", query_text):
                 phrase_bonus = max(phrase_bonus, 0.24 + 0.06 * len(phrase.split()))
@@ -278,9 +278,10 @@ def get_index() -> FaqIndex:
 # --- Public API used by the view --------------------------------------
 
 FALLBACK_ANSWER = (
-    "I could not find an answer to that in our FAQ. Try rewording it, pick one "
-    "of the suggested topics, or use the Contact link in the footer to reach the "
-    "support team — include your order reference if it is about a specific order."
+    "Hmm, I'm not quite sure about that one. Try asking it a different way, "
+    "pick one of the topics below, or reach a real person through the Contact "
+    "link in the footer — include your order reference if it's about a "
+    "specific order."
 )
 
 
@@ -326,7 +327,7 @@ def answer_question(query: str) -> dict:
         return {
             "matched": False,
             "confidence": round(best_score, 3),
-            "answer": "I am not sure I understood that. Did you mean one of these?",
+            "answer": "I'm not totally sure I follow — did you mean one of these?",
             "matched_question": "",
             "category": "",
             "suggestions": [best_entry.question] + suggestions,

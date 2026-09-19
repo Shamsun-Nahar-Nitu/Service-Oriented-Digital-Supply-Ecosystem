@@ -39,6 +39,10 @@ SSLCOMMERZ_FAIL_URL = env("SSLCOMMERZ_FAIL_URL", default="")
 SSLCOMMERZ_CANCEL_URL = env("SSLCOMMERZ_CANCEL_URL", default="")
 SSLCOMMERZ_IPN_URL = env("SSLCOMMERZ_IPN_URL", default="")
 
+FRONTEND_BASE_URL = (
+    env("FRONTEND_BASE_URL", default="") or "http://localhost:5173"
+).rstrip("/")
+
 # --- Applications ---
 DJANGO_APPS = [
     "django.contrib.admin",

@@ -70,10 +70,13 @@ export function PaymentResultPage({ kind }) {
           )}
         </div>
       )}
-      <div className="mt-8 flex justify-center gap-3">
+      <div className="mt-8 flex flex-wrap justify-center gap-3">
         <Button as={Link} to={orderLink} variant="secondary">View order</Button>
         <Link to="/products" className="rounded-lg border border-ink-200 px-4 py-2 text-sm font-semibold text-ink-700">
           Continue shopping
+        </Link>
+        <Link to="/" className="rounded-lg px-4 py-2 text-sm font-semibold text-ink-500 hover:text-ink-700">
+          Back to home
         </Link>
       </div>
     </div>

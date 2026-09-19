@@ -6,6 +6,7 @@ import { Badge } from '../ui/Badge';
 import { useCart } from '../../context/CartContext';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
+import { savePendingCartIntent } from '../../utils/pendingCartIntent';
 
 /**
  * Standard catalog tile, used on the home page, product listing, and any
@@ -25,7 +26,8 @@ export function ProductCard({ product }) {
     event.preventDefault();
     event.stopPropagation();
     if (!isAuthenticated) {
-      navigate('/login', { state: { from: window.location.pathname, action: 'add-to-cart' } });
+      savePendingCartIntent(product, 1, 'add-to-cart');
+      navigate('/login', { state: { from: '/cart' } });
       return;
     }
     addItem(product, 1);

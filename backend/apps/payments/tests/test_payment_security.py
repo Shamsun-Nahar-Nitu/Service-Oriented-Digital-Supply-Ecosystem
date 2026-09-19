@@ -338,10 +338,54 @@ class PaymentSecurityTests(APITestCase):
             format="json",
         )
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        # A browser-facing callback type now redirects to the frontend's
+        # result page instead of returning the failure as raw JSON — see
+        # SSLCommerzCallbackView. The underlying payment/transaction state
+        # is what actually matters here and is unchanged.
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        self.assertIn("/payment/fail", response.url)
         payment.refresh_from_db()
         self.assertEqual(payment.status, Payment.Status.FAILED)
         self.assertEqual(payment.transaction.status, "PENDING")
+
+    @override_settings(
+        SSLCOMMERZ_STORE_ID="test-store",
+        SSLCOMMERZ_STORE_PASSWORD="test-password",
+        FRONTEND_BASE_URL="http://testserver-frontend",
+    )
+    @patch("apps.payments.services.requests.post")
+    def test_success_callback_redirects_browser_to_frontend_result_page(self, post):
+        """The customer's browser — not a server — lands on the success/
+        fail/cancel URLs, so those must never show raw JSON (see the bug
+        this was written to catch)."""
+        post.return_value = self.gateway_response(
+            {
+                "status": "VALID",
+                "tran_id": "gateway-1",
+                "val_id": "validation-1",
+                "amount": "909.00",
+                "currency": "BDT",
+            }
+        )
+        payment = Payment.objects.create(
+            transaction=self.order,
+            method=Payment.Method.ONLINE,
+            amount=self.order.total_amount,
+            currency="BDT",
+            gateway_transaction_id="gateway-1",
+        )
+
+        response = self.client.post(
+            reverse("payments:callback", args=["success"]),
+            {"tran_id": "gateway-1", "val_id": "validation-1"},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        self.assertEqual(
+            response.url, f"http://testserver-frontend/payment/success?payment_id={payment.id}"
+        )
+        payment.refresh_from_db()
+        self.assertEqual(payment.status, Payment.Status.SUCCESS)
 
     @override_settings(
         SSLCOMMERZ_STORE_ID="test-store", SSLCOMMERZ_STORE_PASSWORD="test-password"
