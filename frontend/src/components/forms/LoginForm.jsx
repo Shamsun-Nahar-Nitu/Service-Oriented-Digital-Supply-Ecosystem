@@ -1,16 +1,27 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Mail, Lock } from 'lucide-react';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { useAuth } from '../../context/AuthContext';
 import { getErrorMessage, getFieldErrors } from '../../utils/errors';
 
-export function LoginForm({ onSuccess }) {
+export function LoginForm({ onSuccess, initialEmail = '' }) {
   const { login } = useAuth();
-  const [values, setValues] = useState({ email: '', password: '' });
+  const [values, setValues] = useState({ email: initialEmail, password: '' });
   const [fieldErrors, setFieldErrors] = useState({});
   const [formError, setFormError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const passwordRef = useRef(null);
+
+  // Picking a "recent account" (see RecentAccountsPicker) fills the email
+  // and moves focus to the password field — with the autoComplete hints
+  // below, that's what prompts the browser's own saved-password manager to
+  // offer filling the password in, without us ever storing it ourselves.
+  useEffect(() => {
+    if (!initialEmail) return;
+    setValues((current) => ({ ...current, email: initialEmail }));
+    passwordRef.current?.focus();
+  }, [initialEmail]);
 
   function handleChange(field) {
     return (event) => setValues((current) => ({ ...current, [field]: event.target.value }));
@@ -54,6 +65,7 @@ export function LoginForm({ onSuccess }) {
         type="password"
         autoComplete="current-password"
         required
+        ref={passwordRef}
         leftIcon={<Lock className="h-4 w-4" aria-hidden="true" />}
         value={values.password}
         onChange={handleChange('password')}

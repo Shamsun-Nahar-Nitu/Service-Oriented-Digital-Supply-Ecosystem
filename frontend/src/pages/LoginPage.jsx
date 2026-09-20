@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LoginForm } from '../components/forms/LoginForm';
+import { RecentAccountsPicker } from '../components/forms/RecentAccountsPicker';
 import { getHomePath } from '../utils/roleHome';
 import { ROLES } from '../utils/constants';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
 import { takePendingCartIntent } from '../utils/pendingCartIntent';
+import { forgetAccount, getRecentAccounts, rememberAccount } from '../utils/recentAccounts';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -12,8 +15,12 @@ export default function LoginPage() {
   const cart = useCart();
   const toast = useToast();
   const from = location.state?.from;
+  const [recentAccounts, setRecentAccounts] = useState(getRecentAccounts);
+  const [selectedEmail, setSelectedEmail] = useState('');
 
   function handleSuccess(user) {
+    rememberAccount(user);
+
     // A guest clicking "Add to cart" or "Buy now" gets sent here before the
     // item is ever added (see ProductCard/ProductDetailPage) — finish that
     // now, in preference to wherever they'd otherwise land, so the product
@@ -30,13 +37,22 @@ export default function LoginPage() {
     navigate(destination || getHomePath(user.role), { replace: true });
   }
 
+  function handleRemoveAccount(email) {
+    setRecentAccounts(forgetAccount(email));
+  }
+
   return (
     <div>
       <h1 className="font-display text-2xl font-bold text-ink-900">Welcome back</h1>
       <p className="mt-1 text-sm text-ink-500">Log in to continue.</p>
 
       <div className="mt-6">
-        <LoginForm onSuccess={handleSuccess} />
+        <RecentAccountsPicker
+          accounts={recentAccounts}
+          onSelect={setSelectedEmail}
+          onRemove={handleRemoveAccount}
+        />
+        <LoginForm onSuccess={handleSuccess} initialEmail={selectedEmail} />
       </div>
 
       <p className="mt-6 text-center text-sm text-ink-500">
