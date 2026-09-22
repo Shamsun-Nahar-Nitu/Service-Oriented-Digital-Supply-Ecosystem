@@ -173,6 +173,72 @@ CATALOG = {
     ],
 }
 
+
+# Product image URLs used by the demo catalog. These are intentionally
+# kept separate from CATALOG so the existing product/pricing/stock tuples
+# and transaction-history logic remain unchanged.
+PRODUCT_IMAGE_URLS = {
+    # TechZone
+    "TZX-ELEC-01": "https://images.unsplash.com/photo-1545454675-3531b543be5d?w=600&auto=format&fit=crop&q=80",
+    "TZX-ELEC-02": "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=600&auto=format&fit=crop&q=80",
+    "TZX-ELEC-03": "https://images.unsplash.com/photo-1609592424109-dd9892f1b177?w=600&auto=format&fit=crop&q=80",
+    "TZX-ELEC-04": "https://images.unsplash.com/photo-1616440342232-159c99147d33?w=600&auto=format&fit=crop&q=80",
+    "TZX-ELEC-05": "https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=600&auto=format&fit=crop&q=80",
+    "TZX-ELEC-06": "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=600&auto=format&fit=crop&q=80",
+    "TZX-MOB-07": "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=600&auto=format&fit=crop&q=80",
+    "TZX-MOB-08": "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=600&auto=format&fit=crop&q=80",
+    "TZX-ELEC-09": "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600&auto=format&fit=crop&q=80",
+    "TZX-MOB-10": "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=600&auto=format&fit=crop&q=80",
+
+    # FreshMart
+    "FRM-GRO-01": "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=600&auto=format&fit=crop&q=80",
+    "FRM-GRO-02": "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=600&auto=format&fit=crop&q=80",
+    "FRM-GRO-03": "https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=600&auto=format&fit=crop&q=80",
+    "FRM-GRO-04": "https://static-01.daraz.com.bd/p/8c1b3380cca980346322dcdced4c74e8.png",
+    "FRM-GRO-05": "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=600&auto=format&fit=crop&q=80",
+    "FRM-GRO-06": "https://images.unsplash.com/photo-1621263764928-df1444c5e859?w=600&auto=format&fit=crop&q=80",
+    "FRM-BEA-07": "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=600&auto=format&fit=crop&q=80",
+    "FRM-BEA-08": "https://images.unsplash.com/photo-1556228722-d1193828e40b?w=600&auto=format&fit=crop&q=80",
+    "FRM-BEA-09": "https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?w=600&auto=format&fit=crop&q=80",
+    "FRM-BEA-10": "https://images.unsplash.com/photo-1600857544200-b2f666a9a2ec?w=600&auto=format&fit=crop&q=80",
+
+    # Style House
+    "STY-FAS-01": "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80",
+    "STY-FAS-02": "https://images.unsplash.com/photo-1542272604-780c36856d61?w=600&auto=format&fit=crop&q=80",
+    "STY-FAS-03": "https://images.unsplash.com/photo-1598033129183-c4f50c736f10?w=600&auto=format&fit=crop&q=80",
+    "STY-FAS-04": "https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?w=600&auto=format&fit=crop&q=80",
+    "STY-FAS-05": "https://images.unsplash.com/photo-1603808033192-082d6919d3e1?w=600&auto=format&fit=crop&q=80",
+    "STY-BOK-06": "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&auto=format&fit=crop&q=80",
+    "STY-BOK-07": "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=600&auto=format&fit=crop&q=80",
+    "STY-BOK-08": "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=600&auto=format&fit=crop&q=80",
+    "STY-STA-09": "https://images.unsplash.com/photo-1585336261026-6757f541a674?w=600&auto=format&fit=crop&q=80",
+    "STY-STA-10": "https://images.unsplash.com/photo-1611125832047-1d7ad1e8e48f?w=600&auto=format&fit=crop&q=80",
+
+    # HomeCraft
+    "HMC-APP-01": "https://images.unsplash.com/photo-1584992236310-6edddc08acff?w=600&auto=format&fit=crop&q=80",
+    "HMC-APP-02": "https://images.unsplash.com/photo-1544233726-9f1d2b27be8b?w=600&auto=format&fit=crop&q=80",
+    "HMC-APP-03": "https://images.unsplash.com/photo-1618944847023-38aa001235f0?w=600&auto=format&fit=crop&q=80",
+    "HMC-APP-04": "https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=600&auto=format&fit=crop&q=80",
+    "HMC-APP-05": "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=600&auto=format&fit=crop&q=80",
+    "HMC-HOM-06": "https://images.unsplash.com/photo-1595428774223-ef52624120d2?w=600&auto=format&fit=crop&q=80",
+    "HMC-HOM-07": "https://images.unsplash.com/photo-1585515320310-259814833e62?w=600&auto=format&fit=crop&q=80",
+    "HMC-HOM-08": "https://images.unsplash.com/photo-1610557892470-55d9e80c0bce?w=600&auto=format&fit=crop&q=80",
+    "HMC-HOM-09": "https://images.unsplash.com/photo-1615865417236-d67f572a746f?w=600&auto=format&fit=crop&q=80",
+    "HMC-HOM-10": "https://images.unsplash.com/photo-1583778176476-4a8b02a64c01?w=600&auto=format&fit=crop&q=80",
+
+    # SportsHub
+    "SPH-SPT-01": "https://images.unsplash.com/photo-1614632537190-23e4146777db?w=600&auto=format&fit=crop&q=80",
+    "SPH-SPT-02": "https://images.unsplash.com/photo-1531415074968-036ba1b575da?w=600&auto=format&fit=crop&q=80",
+    "SPH-SPT-03": "https://images.unsplash.com/photo-1584735935682-2f2b69dff9d2?w=600&auto=format&fit=crop&q=80",
+    "SPH-SPT-04": "https://images.unsplash.com/photo-1598289431512-b97b0917affc?w=600&auto=format&fit=crop&q=80",
+    "SPH-SPT-05": "https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=600&auto=format&fit=crop&q=80",
+    "SPH-SPT-06": "https://images.unsplash.com/photo-1511886929837-354d827aae26?w=600&auto=format&fit=crop&q=80",
+    "SPH-SPT-07": "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=80",
+    "SPH-SPT-08": "https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=600&auto=format&fit=crop&q=80",
+    "SPH-SPT-09": "https://images.unsplash.com/photo-1534158914592-062992fbe900?w=600&auto=format&fit=crop&q=80",
+    "SPH-SPT-10": "https://images.unsplash.com/photo-1598289431512-b97b0917affc?w=600&auto=format&fit=crop&q=80",
+}
+
 WAREHOUSES = {
     "TZX": "Dhaka - Tejgaon DC", "FRM": "Dhaka - Savar DC",
     "STY": "Narayanganj DC", "HMC": "Gazipur DC", "SPH": "Dhaka - Uttara DC",
@@ -323,8 +389,14 @@ class Command(BaseCommand):
                         "vendor": vendor,
                         "is_active": True,
                         "description": f"{name} by {brand}, sold by {vendor.full_name}.",
+                        "image_url": PRODUCT_IMAGE_URLS.get(sku, ""),
                     },
                 )
+                image_url = PRODUCT_IMAGE_URLS.get(sku, "")
+                if product.image_url != image_url:
+                    Product.objects.filter(pk=product.pk).update(image_url=image_url)
+                    product.image_url = image_url
+
                 if created:
                     created_count += 1
                 elif not product.is_active:
