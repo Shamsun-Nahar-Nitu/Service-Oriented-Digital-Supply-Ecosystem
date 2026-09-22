@@ -1,4 +1,5 @@
 import { apiClient } from './client';
+import { triggerBlobDownload } from '../utils/downloadBlob';
 
 /**
  * /finance/ — commission ledger dashboards and their PDF reports
@@ -22,28 +23,14 @@ export const financeApi = {
 
   async downloadAdminReport(params) {
     const { data } = await apiClient.get('/finance/reports/admin/', { params, responseType: 'blob' });
-    triggerDownload(data, 'admin-report.pdf');
+    triggerBlobDownload(data, 'admin-report.pdf');
   },
   async downloadManagerReport(params) {
     const { data } = await apiClient.get('/finance/reports/manager/', { params, responseType: 'blob' });
-    triggerDownload(data, 'manager-report.pdf');
+    triggerBlobDownload(data, 'manager-report.pdf');
   },
   async downloadVendorReport(params) {
     const { data } = await apiClient.get('/finance/reports/vendor/', { params, responseType: 'blob' });
-    triggerDownload(data, 'vendor-report.pdf');
+    triggerBlobDownload(data, 'vendor-report.pdf');
   },
 };
-
-/** Saves a blob response to disk via a throwaway <a download> — the
- * standard way to turn an axios blob response into a file save, since
- * there's no <form> download target for an authenticated XHR request. */
-function triggerDownload(blob, filename) {
-  const url = window.URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  window.URL.revokeObjectURL(url);
-}

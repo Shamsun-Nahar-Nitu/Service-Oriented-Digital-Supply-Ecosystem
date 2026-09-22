@@ -2,7 +2,7 @@ from urllib.parse import urlencode
 
 from django.conf import settings
 from django.db import transaction as db_transaction
-from django.http import HttpResponseRedirect, JsonResponse
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Payment
+from .receipts import build_receipt_pdf
 from .serializers import PaymentSerializer
 from .services import SSLCommerzError, SSLCommerzService
 
@@ -123,6 +124,39 @@ class PaymentViewSet(
             )
         payment.mark_successful()
         return Response(PaymentSerializer(payment).data)
+
+    @action(detail=True, methods=["get"])
+    def receipt(self, request, pk=None):
+        """
+        GET /api/v1/payments/{id}/receipt/ — downloadable PDF receipt.
+
+        Uses the same object-level access as every other action on this
+        viewset (get_object() -> get_queryset(): the customer who owns the
+        order, or an admin/manager) — a receipt is a read, not a mutation,
+        so it's allowed anywhere retrieve() already is, no extra check
+        needed on top.
+        """
+        payment = self.get_object()
+        if payment.status != Payment.Status.SUCCESS:
+            return Response(
+                {"detail": "A receipt is only available for a successful payment."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # get_object() already proved this payment is one this user may see;
+        # re-fetched here with the heavier prefetch the receipt actually
+        # needs (items + their products), which the shared get_queryset()
+        # deliberately doesn't carry since list/retrieve don't need it.
+        payment = (
+            Payment.objects.select_related("transaction", "transaction__user")
+            .prefetch_related("transaction__items__product")
+            .get(pk=payment.pk)
+        )
+        pdf_bytes = build_receipt_pdf(payment)
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        order_ref = str(payment.transaction.transaction_number)[:8]
+        response["Content-Disposition"] = f'attachment; filename="receipt-{order_ref}.pdf"'
+        return response
 
 
 class SSLCommerzCallbackView(APIView):

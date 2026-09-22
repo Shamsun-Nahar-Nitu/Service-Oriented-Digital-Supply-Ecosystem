@@ -58,11 +58,10 @@ export default function App() {
                 <Route path="/" element={<HomePage />} />
                 <Route path="/products" element={<ProductsPage />} />
                 <Route path="/products/:id" element={<ProductDetailPage />} />
+                <Route path="/payment/success" element={<PaymentSuccessPage />} />
+                <Route path="/payment/fail" element={<PaymentFailPage />} />
+                <Route path="/payment/cancel" element={<PaymentCancelPage />} />
               </Route>
-
-              <Route path="/payment/success" element={<PaymentSuccessPage />} />
-              <Route path="/payment/fail" element={<PaymentFailPage />} />
-              <Route path="/payment/cancel" element={<PaymentCancelPage />} />
 
               <Route element={<RequireAuth />}>
                 <Route element={<RequireRole roles={['CUSTOMER']} />}>

@@ -1,4 +1,5 @@
 import { apiClient } from './client';
+import { triggerBlobDownload } from '../utils/downloadBlob';
 
 export const paymentsApi = {
   list(params) {
@@ -15,5 +16,9 @@ export const paymentsApi = {
   },
   markCodCollected(id) {
     return apiClient.post(`/payments/${id}/mark_cod_collected/`).then((r) => r.data);
+  },
+  async downloadReceipt(id, orderReference) {
+    const { data } = await apiClient.get(`/payments/${id}/receipt/`, { responseType: 'blob' });
+    triggerBlobDownload(data, `receipt-${orderReference || id}.pdf`);
   },
 };
